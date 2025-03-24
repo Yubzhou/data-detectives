@@ -68,11 +68,11 @@
             拷贝到项目的src/main/resources/META-INF/。
             然后将该依赖注释掉即可（即该注释只要用一次即可）
         -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-configuration-processor</artifactId>
-            <optional>true</optional>
-        </dependency>
+        <!--<dependency>-->
+        <!--    <groupId>org.springframework.boot</groupId>-->
+        <!--    <artifactId>spring-boot-configuration-processor</artifactId>-->
+        <!--    <optional>true</optional>-->
+        <!--</dependency>-->
 
         <!--&lt;!&ndash;该依赖用于整合devtools，可以热加载（即修改代码后不需要手动重启服务器）&ndash;&gt;-->
         <!--<dependency>-->
@@ -198,6 +198,12 @@
     </dependencies>
 
     <build>
+        <!--
+            指定package打包后生成的jar包文件名称为${project.artifactId}
+            即如果项目artifactId为data-detectives，则生成的jar包文件名称：data-detectives.jar
+            package打包后可以在target目录下找到该jar包文件
+        -->
+        <finalName>${project.artifactId}</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -228,8 +234,6 @@
                         <exclude>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
-                            <!--必须要指定版本号，要不然会报错-->
-                            <version>${lombok.version}</version>
                         </exclude>
                     </excludes>
                 </configuration>

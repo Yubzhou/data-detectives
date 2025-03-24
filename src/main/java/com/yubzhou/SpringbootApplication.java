@@ -12,7 +12,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.ConfigurableApplicationContext;
 
 @SpringBootApplication
-// @EnableConfigurationProperties(value = {JwtProperties.class, KeyManagerProperties.class})
 @ConfigurationPropertiesScan // 自动扫描并注册所有 @ConfigurationProperties 类
 public class SpringbootApplication {
 

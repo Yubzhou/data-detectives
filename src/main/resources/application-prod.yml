@@ -6,7 +6,13 @@ spring:
       min-idle: "#{ ${system-info.available-processors} * 1 }"  #最小空闲连接数
       max-active: "#{ ${system-info.available-processors} * 4 }"  #最大连接数
       max-wait: 60000  #获取连接时最大等待时间（单位毫秒）
-
+  # kafka 配置
+  kafka:
+    #监听本地kafka服务
+    bootstrap-servers: 127.0.0.1:9092
+  data:
+    redis:
+      url: ENC(Fu4f4W2LPFMtBF1pL771N76tsZsrAtRm+33qUKyjlo9TiwT/4YyRuNn/OKOLmO7PbjqTWwGHW6aZcl1OhRCr9K6uduDseIhb59+nf2uQmtg=)
 
 #设置日志配置
 logging:

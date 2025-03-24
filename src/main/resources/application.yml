@@ -141,6 +141,7 @@ spring:
 
   # kafka 配置
   kafka:
+    #Windows虚拟机的kafka服务
     bootstrap-servers: 192.168.238.100:9092
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer

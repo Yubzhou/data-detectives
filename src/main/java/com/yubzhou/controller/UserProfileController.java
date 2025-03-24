@@ -6,7 +6,6 @@ import com.yubzhou.model.dto.RegisterUserProfileDto;
 import com.yubzhou.model.po.UserProfile;
 import com.yubzhou.service.UserProfileService;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,7 +27,7 @@ public class UserProfileController {
 		this.userProfileService = userProfileService;
 	}
 
-	@GetMapping("/")
+	@GetMapping("")
 	public Result<?> getProfileByUserId() {
 		UserProfile profile = userProfileService.getProfileByUserId();
 		if (profile == null) {

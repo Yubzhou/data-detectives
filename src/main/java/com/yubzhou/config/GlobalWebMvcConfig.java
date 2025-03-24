@@ -1,22 +1,16 @@
 package com.yubzhou.config;
 
-import com.yubzhou.converter.SpelExpressionConverter;
-import com.yubzhou.converter.StringToLongTimeConverter;
 import com.yubzhou.interceptor.JwtAuthInterceptor;
 import com.yubzhou.interceptor.TimeZoneInterceptor;
 import com.yubzhou.properties.FileUploadProperties;
 import com.yubzhou.util.JwtUtil;
 import com.yubzhou.util.PathUtil;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.format.FormatterRegistry;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-
-import java.nio.file.Path;
 
 @Configuration
 @RequiredArgsConstructor
@@ -25,9 +19,6 @@ public class GlobalWebMvcConfig implements WebMvcConfigurer {
 	private final JwtUtil jwtUtil;
 
 	private final FileUploadProperties fileUploadProperties;
-
-	private final SpelExpressionConverter spelExpressionConverter;
-
 
 	/**
 	 * 重写父类提供的跨域请求处理的接口

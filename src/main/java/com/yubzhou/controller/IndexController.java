@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 @JwtIgnore
 public class IndexController {
 
-	@GetMapping("/")
+	@GetMapping({"", "/"})
 	public String index() {
 		return "欢迎来到NFact平台的后端服务首页";
 	}

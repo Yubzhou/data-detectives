@@ -24,5 +24,5 @@ CREATE TABLE IF NOT EXISTS `user_profile`
     `avatar_url`        VARCHAR(255)     NULL     DEFAULT NULL COMMENT '头像url（只存储相对地址，即不带http://localhost:8080）',
     `interested_fields` VARCHAR(50)      NULL     DEFAULT NULL COMMENT '感兴趣领域（多个领域用逗号分隔）',
     PRIMARY KEY (`id`),
-    FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+    UNIQUE KEY `user_id_unique` (`user_id`)
 ) COMMENT '用户信息表';
