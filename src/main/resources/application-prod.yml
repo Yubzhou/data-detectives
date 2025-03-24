@@ -1,0 +1,63 @@
+spring:
+  datasource:
+    druid:
+      # 基础连接池配置
+      initial-size: "#{ ${system-info.available-processors} * 1 }"  #初始化连接数
+      min-idle: "#{ ${system-info.available-processors} * 1 }"  #最小空闲连接数
+      max-active: "#{ ${system-info.available-processors} * 4 }"  #最大连接数
+      max-wait: 60000  #获取连接时最大等待时间（单位毫秒）
+
+
+#设置日志配置
+logging:
+  #设置日志级别
+  level:
+    #根日志级别是所有日志的默认级别，如果没有为特定的类或包指定日志级别，则会使用根日志级别。
+    root: INFO
+    #设置特定包的日志级别为 DEBUG
+    com.yubzhou: DEBUG
+    #设置特定类的日志级别为 TRACE
+    #com.example.MyClass: TRACE
+  charset:
+    console: UTF-8  #控制台输出的字符集
+    file: UTF-8  #日志文件的字符集
+  file:
+    name: ../logs/prod/spring.log  #日志文件路径
+    path: ../logs/prod  #日志文件目录
+
+
+# 自定义配置，用于异步任务配置
+async:
+  # 系统可用CPU核数
+  #available-processors: 8
+  # 使用自己注入的系统变量（在启动类中设置的系统变量）
+  available-processors: ${systemInfo.availableProcessors:2}
+  sse:
+    core-pool-size: "#{ ${async.available-processors} * 2 }"
+    max-pool-size: "#{ ${async.available-processors} * 4 }"
+    queue-capacity: 50  # 小队列快速响应
+    keep-alive-seconds: 30
+    thread-name-prefix: sse-async-
+    reject-policy: java.util.concurrent.ThreadPoolExecutor$DiscardPolicy
+    wait-for-tasks-to-complete-on-shutdown: true
+    await-termination-seconds: 30
+  upload:
+    core-pool-size: "#{ ${async.available-processors} * 2 }"
+    max-pool-size: "#{ ${async.available-processors} * 4 }"
+    queue-capacity: 500  # 适当缓冲突发流量
+    keep-alive-seconds: 120
+    thread-name-prefix: upload-async-
+    # 使用自定义拒绝策略
+    reject-policy: com.yubzhou.config.AsyncConfig$FileUploadRejectedExecutionHandler
+    wait-for-tasks-to-complete-on-shutdown: true
+    await-termination-seconds: 120  # 大文件需要更长时间
+  global:
+    core-pool-size: "#{ ${async.available-processors} * 1 }"
+    max-pool-size: "#{ ${async.available-processors} * 2 }"
+    queue-capacity: 200
+    keep-alive-seconds: 60
+    thread-name-prefix: global-async-
+    # 拒绝策略的类全名（如 java.util.concurrent.ThreadPoolExecutor$DiscardPolicy）
+    reject-policy: java.util.concurrent.ThreadPoolExecutor$CallerRunsPolicy
+    wait-for-tasks-to-complete-on-shutdown: true
+    await-termination-seconds: 60

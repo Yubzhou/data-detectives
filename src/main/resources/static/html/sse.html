@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>SSE Demo</title>
+  </head>
+  <body>
+	<h1>SSE Demo</h1>
+	<div id="messages"></div>
+
+	<script>
+	  const baseUrl = "http://localhost:8080";
+
+	  // 1. 先订阅 SSE
+	  const eventSource = new EventSource(baseUrl + '/sse/subscribe');
+	  eventSource.addEventListener('requestId', (event) => {
+		const requestId = event.data;
+		// 2. 收到 requestId 后提交业务请求
+		fetch(baseUrl + '/api/process', {
+		  method: 'POST',
+		  headers: {'Content-Type': 'application/json;charset=utf-8'},
+		  body: JSON.stringify({requestId, data: 'Hello, SSE!'})
+		});
+	  });
+
+	  const messagesDiv = document.getElementById('messages');
+	  // 监听 result 事件，并在页面上显示结果
+	  eventSource.addEventListener('result', function (event) {
+		messagesDiv.innerHTML += `<p>Received: ${event.data}</p>`;
+	  });
+
+	  // 监听 end 事件，表示 SSE 连接已关闭
+	  eventSource.addEventListener('end', function (event) {
+		console.log("Connection to server closed");
+		eventSource.close(); // 主动关闭连接
+		console.log("Connection closed: ", eventSource.readyState === EventSource.CLOSED);
+	  });
+
+	  // 监听 error 事件，表示 SSE 连接出错
+	  eventSource.onerror = function (error) {
+		console.error('EventSource failed:', error);
+		console.dir(error);
+		eventSource.close(); // 主动关闭连接
+		console.log("Connection closed: ", eventSource.readyState === EventSource.CLOSED);
+	  };
+
+	  // 监听 open 事件，表示 SSE 连接已建立
+	  eventSource.onopen = function () {
+		console.log('Connection to server opened');
+	  };
+	</script>
+  </body>
+</html>
