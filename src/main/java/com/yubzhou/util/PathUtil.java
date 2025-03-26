@@ -1,8 +1,11 @@
 package com.yubzhou.util;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+@Slf4j
 public class PathUtil {
 
 	private static final String PROJECT_PATH = System.getProperty("user.dir");
@@ -17,6 +20,7 @@ public class PathUtil {
 	 */
 	public static Path getExternalPath(String relativePath) {
 		Path projectPath = Paths.get(PROJECT_PATH);
+		log.info("project path: {}", projectPath);
 		return projectPath.resolveSibling(relativePath).normalize();
 	}
 }

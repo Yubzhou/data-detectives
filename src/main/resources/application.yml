@@ -106,7 +106,6 @@ spring:
       add-mappings: false  #关闭默认的静态资源路径映射
       # 设置静态资源路径
       static-locations:
-        - file:${file.image.upload-dir}
         - classpath:/static/
 
   jackson:

@@ -14,7 +14,7 @@ import java.util.Set;
 @AllArgsConstructor
 public class RegisterUserProfileDto {
 	@Length(min = 2, max = 15, message = "昵称长度必须在2-15之间")
-	private String nickName; // 昵称
+	private String nickname; // 昵称
 
 	@NotEmpty(message = "感兴趣领域不能为空")
 	private Set<String> interestedFields; // 兴趣领域
@@ -24,7 +24,7 @@ public class RegisterUserProfileDto {
 
 	public UserProfile toEntity(RegisterUserProfileDto dto) {
 		UserProfile userProfile = new UserProfile();
-		userProfile.setNickName(dto.getNickName());
+		userProfile.setNickname(dto.getNickname());
 		userProfile.setAvatarUrl(dto.getAvatarUrl());
 		userProfile.setInterestedFields(dto.getInterestedFields());
 		return userProfile;

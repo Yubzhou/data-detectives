@@ -14,14 +14,14 @@ import java.util.Set;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@TableName("user_profile") // mybatis-plus注解，指定对应的数据库表名
+@TableName("user_profiles") // mybatis-plus注解，指定对应的数据库表名
 public class UserProfile {
 	@TableId // mybatis-plus注解，指定主键
 	private Long id; // 主键
 
 	private Long userId; // 用户id
 
-	private String nickName; // 昵称
+	private String nickname; // 昵称
 
 	private Short gender; // 性别（0:未知，1:男，2:女）
 

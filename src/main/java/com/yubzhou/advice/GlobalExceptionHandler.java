@@ -61,11 +61,11 @@ public class GlobalExceptionHandler {
 		return Result.fail(ReturnCode.RC400.getCode(), "参数不合法: " + e.getMessage());
 	}
 
-	// 处理 CompletionException 异常
+	// 处理 CompletionException 异常：CompletionException 异常是由 CompletableFuture 类抛出的，
 	@ExceptionHandler(CompletionException.class)
 	@ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
 	public Result<Void> handleCompletionException(CompletionException e) {
-		log.error("CompletionException: {}", e.getMessage());
+		log.error("异步任务执行异常 CompletionException: {}", e.getMessage());
 		return Result.fail(ReturnCode.RC500.getCode(), "服务器内部错误: " + e.getMessage());
 	}
 

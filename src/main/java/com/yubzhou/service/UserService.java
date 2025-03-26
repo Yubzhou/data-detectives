@@ -18,4 +18,8 @@ public interface UserService extends IService<User> {
 	void logout(UserToken userToken);
 
 	Map<String, String> refreshToken(String encryptedRefreshToken, HttpServletRequest request);
+
+	void updatePassword(Long userId, String oldPassword, String newPassword);
+
+	void updatePhone(long userId, String phone, String captcha);
 }

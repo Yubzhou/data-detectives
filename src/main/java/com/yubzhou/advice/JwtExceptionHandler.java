@@ -28,14 +28,14 @@ public class JwtExceptionHandler {
 	public Result<Void> handleJWTVerificationException(JWTVerificationException e, HttpServletRequest request) {
 		if (e instanceof JWTDecodeException) {
 			log.error("JWTDecodeException: {}", e.getMessage());
-			return Result.fail(ReturnCode.INVALID_TOKEN.getCode(), ReturnCode.INVALID_TOKEN.getMessage() + ": " + e.getMessage());
+			return Result.fail(ReturnCode.INVALID_TOKEN);
 		} else if (e instanceof TokenExpiredException) {
 			String expiredOn = formatDateTime(request, ((TokenExpiredException) e).getExpiredOn());
 			log.error("TokenExpiredException: {}, expired at {}", e.getMessage(), expiredOn);
 			return Result.fail(ReturnCode.EXPIRED_TOKEN.getCode(), "token已过期，失效时间：" + expiredOn);
 		}
 		log.error("JWTVerificationException: {}", e.getMessage());
-		return Result.fail(ReturnCode.INVALID_TOKEN.getCode(), ReturnCode.INVALID_TOKEN.getMessage() + ": " + e.getMessage());
+		return Result.fail(ReturnCode.INVALID_TOKEN);
 	}
 
 	private String formatDateTime(HttpServletRequest request, Instant expiredOn) {

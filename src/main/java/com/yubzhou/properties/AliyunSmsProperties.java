@@ -19,8 +19,10 @@ public class AliyunSmsProperties {
 	@Getter
 	@AllArgsConstructor
 	public enum TemplateCode {
-		LOGIN,
-		REGISTER;
+		LOGIN, // 登录模板
+		REGISTER, // 注册模板
+		VERIFY // 验证手机号码模板
+		;
 
 		public static TemplateCode from(String code) {
 			try {
@@ -34,6 +36,7 @@ public class AliyunSmsProperties {
 			return switch (this) {
 				case LOGIN -> properties.getLoginTemplateCode();
 				case REGISTER -> properties.getRegisterTemplateCode();
+				default -> properties.getLoginTemplateCode(); // 如果为其他模板，则使用登录模板
 			};
 		}
 	}

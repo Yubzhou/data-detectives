@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@TableName("user") // mybatis-plus注解，指定对应的数据库表名
+@TableName("users") // mybatis-plus注解，指定对应的数据库表名
 public class User {
 	@TableId // 标记为主键
 	private Long id; // 用户ID

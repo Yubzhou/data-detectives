@@ -6,14 +6,17 @@ import com.yubzhou.common.*;
 import com.yubzhou.exception.BusinessException;
 import com.yubzhou.mapper.UserMapper;
 import com.yubzhou.model.po.User;
+import com.yubzhou.service.UserProfileService;
 import com.yubzhou.service.UserService;
 import com.yubzhou.util.BCryptUtil;
 import com.yubzhou.util.JwtUtil;
 import com.yubzhou.util.LocalAssert;
 import com.yubzhou.util.RedisUtil;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -21,16 +24,20 @@ import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Objects;
 
+
 @Service
 @Slf4j
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
 	private final JwtUtil jwtUtil;
 	private final RedisUtil redisUtil;
+	private final UserProfileService userProfileService;
 
+	// 使用@Lazy注解，避免循环依赖
 	@Autowired
-	public UserServiceImpl(JwtUtil jwtUtil, RedisUtil redisUtil) {
+	public UserServiceImpl(JwtUtil jwtUtil, RedisUtil redisUtil,@Lazy UserProfileService userProfileService) {
 		this.jwtUtil = jwtUtil;
 		this.redisUtil = redisUtil;
+		this.userProfileService = userProfileService;
 	}
 
 	/**
@@ -57,23 +64,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 			throw new BusinessException(ReturnCode.RC500.getCode(), "注册失败：系统异常，请联系管理员"); // 注册失败
 		}
 
+		// 注册成功，将用户消息表与用户id关联起来
+		userProfileService.insertUserProfile(user.getId());
+
 		// 注册成功，返回双token
 		return this.generateTokens(user, request);
-	}
-
-	private User findByPhone(String phone) {
-		return this.lambdaQuery()
-				// 只查询用户ID、手机号、密码、角色、状态
-				.select(User::getId, User::getPhone, User::getPassword, User::getRole, User::getStatus)
-				.eq(User::getPhone, phone) // 根据手机号查询
-				.one(); // 获取查询结果
-	}
-
-	private void updateLastLoginAt(User user) {
-		this.lambdaUpdate()
-				.set(User::getLastLoginAt, LocalDateTime.now())
-				.eq(User::getId, user.getId())
-				.update();
 	}
 
 	private Map<String, String> generateTokens(User user, HttpServletRequest request) {
@@ -99,7 +94,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 		// 检查账号是否被锁定（验证码错误次数限制，如5次错误后锁定1小时）
 		String smsLockKey = RedisConstant.SMS_LOCK_PREFIX + user.getPhone();
 		if (redisUtil.hasKey(smsLockKey)) {
-			throw new BusinessException(403, "登录验证码错误次数过多，账号验证码登录功能已锁定，请1小时后重试"); // 账号被锁定
+			throw new BusinessException(403, "验证码错误次数过多，账号验证码校验功能已锁定，请1小时后重试"); // 账号被锁定
 		}
 		// 从Redis获取验证码
 		String smsCaptchaKey = RedisConstant.SMS_CAPTCHA_PREFIX + user.getPhone();
@@ -129,10 +124,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 			if (errorCount >= 5) {
 				redisUtil.set(smsLockKey, true, RedisConstant.SMS_LOCK_EXPIRE_TIME);
 				redisUtil.del(smsErrorCountKey); // 清除计数器
-				throw new BusinessException(403, "登录验证码错误次数过多，账号验证码登录功能已锁定，请1小时后重试");
+				throw new BusinessException(403, "验证码错误次数过多，账号验证码校验功能已锁定，请1小时后重试");
 			}
 
-			throw new BusinessException(400, "登录验证码错误，剩余尝试次数：" + (5 - errorCount)); // 验证码错误
+			throw new BusinessException(400, "验证码校验错误，剩余尝试次数：" + (5 - errorCount)); // 验证码错误
 		}
 
 		// 验证成功后，删除验证码，清理安全状态
@@ -258,6 +253,67 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 		}
 
 		return Map.of("accessToken", newAccessToken, "refreshToken", newEncryptedRefreshToken); // 返回访问令牌和刷新令牌
+	}
+
+	@Override
+	public void updatePassword(Long userId, String oldPassword, String newPassword) {
+		// 验证旧密码是否正确，校验失败会抛出异常 BusinessException
+		verifyPassword(userId, oldPassword);
+		// 加密新密码
+		String hashedPassword = BCryptUtil.encode(newPassword);
+		// 更新密码
+		this.lambdaUpdate()
+				.set(User::getPassword, hashedPassword)
+				.eq(User::getId, userId)
+				.update();
+	}
+
+	@Override
+	public void updatePhone(long userId, String phone, String captcha) {
+		User user = new User();
+		user.setPhone(phone);
+
+		// 如果校验失败会抛出BusinessException
+		smsCaptchaHandler(user, captcha);
+
+		// 更新手机号
+		this.lambdaUpdate()
+				.set(User::getPhone, phone)
+				.eq(User::getId, userId)
+				.update();
+	}
+
+
+	private User findByPhone(String phone) {
+		return this.lambdaQuery()
+				// 只查询用户ID、手机号、密码、角色、状态
+				.select(User::getId, User::getPhone, User::getPassword, User::getRole, User::getStatus)
+				.eq(User::getPhone, phone) // 根据手机号查询
+				.one(); // 获取查询结果
+	}
+
+	private User findByUserId(@NonNull Long userId) {
+		return this.lambdaQuery()
+				// 只查询用户ID、密码
+				.select(User::getId, User::getPassword)
+				.eq(User::getId, userId) // 根据用户ID查询
+				.one(); // 获取查询结果
+	}
+
+	private void updateLastLoginAt(User user) {
+		this.lambdaUpdate()
+				.set(User::getLastLoginAt, LocalDateTime.now())
+				.eq(User::getId, user.getId())
+				.update();
+	}
+
+	private void verifyPassword(Long userId, String password) {
+		User user = this.findByUserId(userId);
+		// 验证密码是否正确
+		boolean isMatch = user != null && BCryptUtil.matches(password, user.getPassword());
+		if (!isMatch) {
+			throw new BusinessException(ReturnCode.USERNAME_OR_PASSWORD_ERROR.getCode(), "原密码错误"); // 登录失败
+		}
 	}
 
 	private void setRefreshTokenToRedis(Long userId, String refreshToken) {

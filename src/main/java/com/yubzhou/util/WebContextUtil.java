@@ -1,6 +1,8 @@
 package com.yubzhou.util;
 
+import com.yubzhou.common.ReturnCode;
 import com.yubzhou.common.UserToken;
+import com.yubzhou.exception.BusinessException;
 
 import java.time.ZoneId;
 import java.util.HashMap;
@@ -35,6 +37,13 @@ public class WebContextUtil {
 	 */
 	public static UserToken getUserToken() {
 		return getKey(USER_TOKEN_KEY, UserToken.class);
+	}
+
+	// 获取当前用户id
+	public static long getCurrentUserId() {
+		Long userId = getUserToken().getUserId();
+		if (userId == null) throw new BusinessException(ReturnCode.USER_NOT_LOGIN);
+		return userId;
 	}
 
 	public static void setAccessToken(String accessToken) {

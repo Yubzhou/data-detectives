@@ -2,6 +2,7 @@ package com.yubzhou.advice;
 
 import com.yubzhou.common.Result;
 import com.yubzhou.common.ReturnCode;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.annotation.Order;
 import org.springframework.dao.DuplicateKeyException;
@@ -25,12 +26,27 @@ public class SqlExceptionHandler {
 	 * @param e DuplicateKeyException
 	 * @return Result<Void>
 	 */
+	// @ExceptionHandler(DuplicateKeyException.class)
+	// @ResponseStatus(HttpStatus.CONFLICT)
+	// public Result<Void> handleDuplicateKeyException(DuplicateKeyException e) {
+	// 	log.error("DuplicateKeyException: {}", e.getMessage());
+	// 	String[] messages = e.getMessage().split(";");
+	// 	// 如果messages数组长度大于1，则取第二个元素，否则返回e.getMessage()
+	// 	return Result.fail(ReturnCode.RC409.getCode(), "Duplicate Key Exception: " + (messages.length > 1 ? messages[1] : e.getMessage()));
+	// }
 	@ExceptionHandler(DuplicateKeyException.class)
 	@ResponseStatus(HttpStatus.CONFLICT)
-	public Result<Void> handleDuplicateKeyException(DuplicateKeyException e) {
+	public Result<Void> handleDuplicateKeyException(DuplicateKeyException e, HttpServletRequest request) {
 		log.error("DuplicateKeyException: {}", e.getMessage());
 		String[] messages = e.getMessage().split(";");
 		// 如果messages数组长度大于1，则取第二个元素，否则返回e.getMessage()
-		return Result.fail(ReturnCode.RC409.getCode(), "Duplicate Key Exception: " + (messages.length > 1 ? messages[1] : e.getMessage()));
+		String message = messages.length > 1 ? messages[1] : e.getMessage();
+		if (message.contains("users.uniq_phone")) {
+			message = "注册失败：该手机号码已被注册";
+			if (request.getRequestURI().contains("/api/profile/phone")) message = "修改手机号码失败：该手机号码已被绑定";
+		} else if (message.contains("user_profiles.uniq_user")) {
+			message = "更新个人信息失败：该用户已存在";
+		}
+		return Result.fail(HttpStatus.CONFLICT.value(), message);
 	}
 }

@@ -2,6 +2,7 @@ package com.yubzhou.model.dto;
 
 import com.yubzhou.common.RegexpConstant;
 import com.yubzhou.model.po.User;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -21,8 +22,7 @@ public class LoginUserDto {
 			groups = {CaptchaLogin.class})
 	private String captcha;
 
-	@Pattern(regexp = RegexpConstant.PASSWORD,
-			message = RegexpConstant.PASSWORD_MESSAGE,
+	@NotBlank(message = "密码不能为空",
 			groups = {PasswordLogin.class})
 	private String password;
 
