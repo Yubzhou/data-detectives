@@ -32,44 +32,18 @@ public class RedisConfig {
 		RedisTemplate<String, Object> template = new RedisTemplate<>();
 		template.setConnectionFactory(factory);
 
-		// mapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
-		// mapper.activateDefaultTyping(LaissezFaireSubTypeValidator.instance, ObjectMapper.DefaultTyping.NON_FINAL,
-		// 		JsonTypeInfo.As.PROPERTY);
+		// 使用String序列化Key
+		StringRedisSerializer stringSerializer = new StringRedisSerializer();
+		template.setKeySerializer(stringSerializer);
+		template.setHashKeySerializer(stringSerializer);
 
-		// 使用Jackson2JsonRedisSerializer序列化和反序列化redis的value值
+		// 使用JSON序列化Value
 		// 使用全局ObjectMapper配置（使其可以支持Java8时间类型）
-		Jackson2JsonRedisSerializer<Object> jsonRedisSerializer = new Jackson2JsonRedisSerializer<>(mapper,
-				Object.class);
+		Jackson2JsonRedisSerializer<Object> jsonSerializer = new Jackson2JsonRedisSerializer<>(mapper, Object.class);
+		template.setValueSerializer(jsonSerializer);
+		template.setHashValueSerializer(jsonSerializer);
 
-		// 设置key和hashKey的序列化器
-		template.setKeySerializer(RedisSerializer.string());
-		template.setHashKeySerializer(RedisSerializer.string());
-		// 设置value和hashValue的序列化器
-		template.setValueSerializer(jsonRedisSerializer);
-		template.setHashValueSerializer(jsonRedisSerializer);
 		template.afterPropertiesSet(); // 显式调用以确保属性设置完成后正确初始化模板
 		return template;
 	}
-
-	// @Bean
-	// public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory factory) {
-	// 	// 创建键为String，值为Object的RedisTemplate
-	// 	RedisTemplate<String, Object> template = new RedisTemplate<>();
-	// 	template.setConnectionFactory(factory);
-	//
-	// 	mapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
-	// 	mapper.activateDefaultTyping(LaissezFaireSubTypeValidator.instance, ObjectMapper.DefaultTyping.NON_FINAL,
-	// 			JsonTypeInfo.As.PROPERTY);
-	//
-	// 	GenericJackson2JsonRedisSerializer jsonRedisSerializer = new GenericJackson2JsonRedisSerializer(mapper);
-	//
-	// 	// 设置key和hashKey的序列化器
-	// 	template.setKeySerializer(RedisSerializer.string());
-	// 	template.setHashKeySerializer(RedisSerializer.string());
-	// 	// 设置value和hashValue的序列化器
-	// 	template.setValueSerializer(jsonRedisSerializer);
-	// 	template.setHashValueSerializer(jsonRedisSerializer);
-	// 	template.afterPropertiesSet(); // 显式调用以确保属性设置完成后正确初始化模板
-	// 	return template;
-	// }
 }

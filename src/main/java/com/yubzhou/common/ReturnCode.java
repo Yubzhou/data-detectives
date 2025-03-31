@@ -22,15 +22,14 @@ public enum ReturnCode {
 	EXPIRED_TOKEN(RC401.code, "token已过期"),
 	TOKEN_GENERATE_ERROR(RC500.code, "token生成失败"),
 	ACCESS_DENIED(RC403.code, "无权访问"),
-	USERNAME_OR_PASSWORD_ERROR(RC401.code, "账号或密码错误"),
-	USER_NOT_LOGIN(RC401.code, "用户未登录"),
-	NEW_PASSWORD_EQUAL_OLD_PASSWORD(RC400.code, "新密码不能与原密码相同"),
 	USER_NOT_FOUND(RC401.code, "账号不存在"),
 	USER_ALREADY_EXISTS(RC401.code, "账号已存在"),
+	PASSWORD_ERROR(RC401.code, "密码错误"),
+	USER_NOT_LOGIN(RC401.code, "用户未登录"),
+	NEW_PASSWORD_EQUAL_OLD_PASSWORD(RC400.code, "新密码不能与原密码相同"),
 	USER_DISABLED(RC401.code, "账号被禁用"),
 	USER_LOCKED(RC401.code, "账号被锁定"),
 	USER_LOGOUT(RC401.code, "账号已注销");
-
 
 	private final int code;
 	private final String message;

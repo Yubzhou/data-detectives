@@ -316,4 +316,116 @@ public class RedisTest {
 		log.info("formattedDateTime: {}", formattedDateTime);
 	}
 
+	@Test
+	public void testRedisUtil() throws Exception {
+		// 测试 redis String 类型（存储各种类型的数据）
+		redisUtil.set("string", "hello world");
+		Object value = redisUtil.get("string");
+		log.info("value: {}; type: {}", value, value.getClass());
+
+		// 基本数据类型
+		redisUtil.set("int", 10);
+		value = redisUtil.get("int", Integer.class);
+		log.info("value: {}; type: {}", value, value.getClass());
+
+		redisUtil.set("double", 3.1415926);
+		value = redisUtil.get("double", Double.class);
+		log.info("value: {}; type: {}", value, value.getClass());
+
+		redisUtil.set("boolean", true);
+		value = redisUtil.get("boolean", Boolean.class);
+		log.info("value: {}; type: {}", value, value.getClass());
+
+		// 对象类型
+		User user = new User();
+		user.setId(1L);
+		user.setPhone("+86-13812345678");
+		user.setPassword("123456");
+		user.setRole(UserRole.USER);
+		user.setCreatedAt(LocalDateTime.now());
+		user.setUpdatedAt(LocalDateTime.now());
+
+		redisUtil.set("user", user);
+		value = redisUtil.get("user", User.class);
+		log.info("value: {}; type: {}", value, value.getClass());
+
+		// 集合类型
+		List<User> userList = new ArrayList<>();
+		userList.add(user);
+		userList.add(user);
+		redisUtil.set("userList", userList);
+		value = redisUtil.get("userList", List.class);
+		log.info("value: {}; type: {}", value, value.getClass());
+
+		// Map类型
+		Map<String, Object> userMap = new HashMap<>();
+		userMap.put("id", 1L);
+		userMap.put("username", "小明");
+		userMap.put("password", "123456");
+		userMap.put("role", UserRole.USER);
+		userMap.put("createdAt", LocalDateTime.now());
+		userMap.put("updatedAt", LocalDateTime.now());
+
+		redisUtil.set("userMap", userMap);
+		value = redisUtil.get("userMap", Map.class);
+		log.info("value: {}; type: {}", value, value.getClass());
+
+		// 测试 redis Hash 类型（存储键值对）
+		redisUtil.hset("hash", "key1", 100);
+		redisUtil.hset("hash", "key2", 200);
+		value = redisUtil.hmget("hash");
+		log.info("value: {}; type: {}", value, value.getClass());
+		log.info("value: {}; type: {}", ((Map<?, ?>) value).get("key1"), ((Map<?, ?>) value).get("key1").getClass());
+
+		// 测试 redis List 类型（存储列表数据）
+		redisUtil.lSet("list", "value1");
+		redisUtil.lSet("list", "value2");
+		value = redisUtil.lGet("list", 0, -1);
+		log.info("value: {}; type: {}", value, value.getClass());
+
+		// 测试 redis Set 类型（存储集合数据）
+		redisUtil.sSet("set", "value1");
+		redisUtil.sSet("set", "value2");
+		value = redisUtil.sGet("set");
+		log.info("value: {}; type: {}", value, value.getClass());
+
+		// 测试 redis Sorted Set 类型（存储有序集合数据）
+		redisUtil.zAdd("sortedSet", "value1", 10);
+		redisUtil.zAdd("sortedSet", "value2", 20);
+		value = redisUtil.zRangeWithScores("sortedSet", 0, -1);
+		log.info("value: {}; type: {}", value, value.getClass());
+	}
+
+	@Test
+	public void test12() throws Exception {
+		redisUtil.sSet("set", "value1", "value2");
+		long num1 = redisUtil.sRemove("set", "value1");
+		long num2 = redisUtil.sRemove("set", "value3");
+		log.info("num1: {}, num2: {}", num1, num2);
+	}
+
+	@Test
+	public void test13() throws Exception {
+		redisUtil.set("key", "value");
+		redisUtil.set("key1", 10);
+
+		// redisUtil.set("key", "value");
+
+		Object value = redisUtil.get("key");
+		log.info("value: {}; type: {}", value, value.getClass());
+		value = redisUtil.get("key1");
+		log.info("value: {}; type: {}", value, value.getClass());
+
+		User user = new User();
+		user.setId(1L);
+		user.setPhone("13812345678");
+		user.setPassword("123456");
+
+		redisUtil.set("user", user);
+		value = redisUtil.get("user");
+		log.info("value: {}; type: {}", value, value.getClass());
+		value = redisUtil.get("user", User.class);
+		log.info("value: {}; type: {}", value, value.getClass());
+	}
+
 }

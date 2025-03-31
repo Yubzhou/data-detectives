@@ -9,6 +9,7 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.yubzhou.common.ReturnCode;
 import com.yubzhou.common.UserToken;
 import com.yubzhou.exception.BusinessException;
+import com.yubzhou.exception.TokenInvalidException;
 import com.yubzhou.properties.JwtProperties;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -85,7 +86,7 @@ public class JwtUtil {
 			rawRefreshToken = aesUtil.decrypt(encryptedRefreshToken); // 解密RefreshToken字符串
 			return verifyToken(rawRefreshToken); // 验证RefreshToken
 		} catch (Exception e) {
-			throw new BusinessException(ReturnCode.INVALID_TOKEN.getCode(), "刷新token已失效");
+			throw new TokenInvalidException("刷新token已失效");
 		}
 	}
 

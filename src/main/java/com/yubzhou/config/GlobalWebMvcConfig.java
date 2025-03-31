@@ -1,5 +1,6 @@
 package com.yubzhou.config;
 
+import com.yubzhou.exception.TokenInvalidException;
 import com.yubzhou.interceptor.JwtAuthInterceptor;
 import com.yubzhou.interceptor.TimeZoneInterceptor;
 import com.yubzhou.properties.FileUploadProperties;
@@ -61,14 +62,19 @@ public class GlobalWebMvcConfig implements WebMvcConfigurer {
 						"X-Forwarded-For",
 						"Proxy-Client-IP",
 						"WL-Proxy-Client-IP",
-						"X-Time-Zone"
+						"X-Time-Zone" // 自定义请求头
 				) // 只允许Content-Type、X-Requested-With、Authorization 和 X-Timezone 请求头
 				// X-Timezone 请求头用于设置时区（其中X-Timezone为自定义请求头）
+
+				// 设置是否允许浏览器获取响应头，Access-Control-Expose-Headers
+				.exposedHeaders(
+						TokenInvalidException.TOKEN_INVALID_HEADER // 设置自定义请求头X-Token-Invalid，用于标识token无效
+				)
 
 				// 设置是否允许携带cookie
 				.allowCredentials(true) // 允许携带cookie
 
-				// 设置预检请求的有效期
+				// 设置预检请求的有效期（Access-Control-Max-Age）
 				.maxAge(3600); // 预检请求的有效期为1小时（单位为秒）
 	}
 

@@ -1,6 +1,7 @@
 package com.yubzhou;
 
 import com.yubzhou.common.ReturnCode;
+import com.yubzhou.common.UserActionEvent;
 import com.yubzhou.exception.BusinessException;
 import com.yubzhou.properties.JwtTimeUnit;
 import com.yubzhou.util.ClientFingerprintUtil;
@@ -16,6 +17,7 @@ import java.util.concurrent.CompletionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class MyTest {
 
@@ -223,4 +225,51 @@ public class MyTest {
 		System.out.println(System.getProperty("java.runtime.availableProcessors"));
 	}
 
+	@Test
+	public void test14() throws Exception {
+		String message = String.format("无效的动作类型: %s，只能使用以下动作类型: %s", UserActionEvent.ActionType.SUPPORT, UserActionEvent.ActionType.ACTION_TYPES);
+		System.out.println(message);
+	}
+
+	@Test
+	public void test15() throws Exception {
+		// 基础热度计算
+		int views = 0;
+		int supp = 100;
+		int opp = 0;
+		int comm = 0;
+		int fav = 0;
+		long publishTime = System.currentTimeMillis() - 1000 * 60 * 60 * 24 * 1;
+		double base = Math.log(views + 1) * 0.2
+				+ (supp + opp) * 0.25
+				+ comm * 0.35
+				+ fav * 0.2;
+
+		// 时间衰减计算
+		long deltaHours = (System.currentTimeMillis() - publishTime) / (3600_000);
+		double delta = 0;
+		if (deltaHours < 1)
+			delta = 0;
+		else if (deltaHours < 24)
+			delta = 0.05;
+		else if (deltaHours < 24 * 3)
+			delta = 0.1;
+		else if (deltaHours < 24 * 5)
+			delta = 0.15;
+		else
+			delta = 0.2;
+
+		double decay = base * Math.exp(-delta * deltaHours); // λ=0.1
+
+		System.out.println("-delta * deltaHours: " + (-delta * deltaHours));
+		System.out.println("delta: " + delta);
+		System.out.println("基础热度: " + base);
+		System.out.println("时间衰减: " + String.format("%.6f", decay));
+	}
+
+
+	@Test
+	public void test16() throws Exception {
+		IntStream.range(1, 23).forEach(System.out::println);
+	}
 }

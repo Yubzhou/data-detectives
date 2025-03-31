@@ -7,6 +7,7 @@ import com.yubzhou.service.FileUploadService;
 import com.yubzhou.util.PathUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
@@ -28,7 +29,8 @@ public class FileUploadServiceImpl implements FileUploadService {
 	private final ThreadPoolTaskExecutor uploadTaskExecutor;
 
 	@Autowired
-	public FileUploadServiceImpl(FileUploadProperties fileUploadProperties, ThreadPoolTaskExecutor uploadTaskExecutor) {
+	public FileUploadServiceImpl(FileUploadProperties fileUploadProperties,
+								 @Qualifier("uploadTaskExecutor") ThreadPoolTaskExecutor uploadTaskExecutor) {
 		this.fileUploadProperties = fileUploadProperties;
 		this.uploadTaskExecutor = uploadTaskExecutor;
 	}
@@ -77,9 +79,6 @@ public class FileUploadServiceImpl implements FileUploadService {
 
 		log.info("文件上传开始，数量: {}, 允许类型: {}", files.length, allowedTypes);
 		long start = System.currentTimeMillis();
-
-		// List<UploadResult.SuccessInfo> successFiles = new ArrayList<>();
-		// List<UploadResult.ErrorInfo> errorFiles = new ArrayList<>();
 
 		// 使用线程安全集合
 		Queue<UploadResult.SuccessInfo> successFiles = new ConcurrentLinkedQueue<>();

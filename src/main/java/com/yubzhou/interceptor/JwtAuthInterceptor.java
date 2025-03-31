@@ -2,6 +2,7 @@ package com.yubzhou.interceptor;
 
 import com.yubzhou.annotation.JwtIgnore;
 import com.yubzhou.common.UserToken;
+import com.yubzhou.exception.TokenInvalidException;
 import com.yubzhou.util.LocalAssert;
 import com.yubzhou.util.WebContextUtil;
 import com.yubzhou.util.JwtUtil;
@@ -34,13 +35,15 @@ public class JwtAuthInterceptor implements HandlerInterceptor {
 		// 用来判断当前请求是否对应于一个具体的控制器方法，如果不是，则意味着该请求可能是针对静态资源或其他非控制器方法类型的请求，因此不需要进行额外的处理（比如身份验证）
 		log.info("jwt拦截器：请求的控制器方法：{}, 请求方法：{}，请求路径：{}", handler.getClass().getName(), request.getMethod(),
 				request.getServletPath());
+		// 强制放行所有 OPTIONS 请求
+		if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+			// response.setHeader("Access-Control-Expose-Headers", TokenInvalidException.TOKEN_INVALID_HEADER);
+			response.setStatus(HttpServletResponse.SC_OK); // 明确返回 200
+			log.info("OPTIONS 请求已放行，路径：{}", request.getServletPath());
+			return true; // 中断后续处理
+		}
 		if (!(handler instanceof HandlerMethod)) {
 			// 输出请求方法和请求路径
-			return true;
-		}
-		// 如果是方法探测，直接通过
-		if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
-			response.setStatus(HttpServletResponse.SC_OK);
 			return true;
 		}
 		// 如果该方法上存在JwtIgnore注解且值为true（或者该类上存在JwtIgnore注解且值为true），则直接通过

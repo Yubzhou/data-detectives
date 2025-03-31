@@ -14,7 +14,7 @@ spring:
     redis:
       url: ENC(o6gD5cqZz0wB0Grdqy49CzBlKMjfBR3AsW4SE2h9C35sJTX0P1tARlwoulWFF6GfHL9Bvwuo8+YBnfKT7um2gO0yLn4sRcIcuNF2NueTNp0=)
 
-#设置日志配置
+
 logging:
   #设置日志级别
   level:
@@ -61,5 +61,15 @@ async:
     thread-name-prefix: global-async-
     # 拒绝策略的类全名（如 java.util.concurrent.ThreadPoolExecutor$DiscardPolicy）
     reject-policy: java.util.concurrent.ThreadPoolExecutor$CallerRunsPolicy
+    wait-for-tasks-to-complete-on-shutdown: true
+    await-termination-seconds: 60
+
+
+#自定义定时任务线程池配置
+task:
+  scheduler:
+    pool-size: "#{ ${system-info.available-processors} * 1 }"
+    thread-name-prefix: task-scheduler-
+    reject-policy: java.util.concurrent.ThreadPoolExecutor$AbortPolicy
     wait-for-tasks-to-complete-on-shutdown: true
     await-termination-seconds: 60

@@ -3,6 +3,9 @@ package com.yubzhou.common;
 public class RedisConstant {
 	// 以下全部时间单位均为秒
 
+
+	// ===================== sms redis key =================================
+
 	// 存储refreshToken的前缀
 	public static final String USER_REFRESH_TOKEN_PREFIX = "user:refreshToken:";
 	// refreshToken有效期
@@ -32,4 +35,30 @@ public class RedisConstant {
 	public static final long SMS_LOCK_EXPIRE_TIME = 60 * 60; // 1小时
 	// 短信验证码错误次数的前缀
 	public static final String SMS_ERROR_COUNT_PREFIX = "login:sms_error_count:";
+
+
+	// ===================== hotnews redis key =================================
+	// 新闻指标的前缀
+	public static final String NEWS_METRICS_PREFIX = "news_metrics:";
+
+	// 保存每1小时热点新闻
+	public static final String HOT_NEWS_HOUR_PREFIX = "hot_news:1h:";
+
+	// 保存每天热点新闻
+	public static final String HOT_NEWS_DAY = "hot_news:1d";
+	public static final String HOT_NEWS_DAY_PREFIX = HOT_NEWS_DAY + ":";
+
+	// 最近24小时热点新闻
+	public static final String HOT_NEWS_24HOUR = "hot_news:24h";
+	public static final String HOT_NEWS_24HOUR_PREFIX = HOT_NEWS_24HOUR + ":";
+	public static final String HOT_NEWS_24HOUR_CACHE_TOP10 = HOT_NEWS_24HOUR_PREFIX + "cache_top10";
+	public static final String HOT_NEWS_24HOUR_MERGED_PREFIX = HOT_NEWS_24HOUR_PREFIX + "merged:";
+
+	// 最近7天热点新闻
+	public static final String HOT_NEWS_WEEK = "hot_news:7d";
+	public static final String HOT_NEWS_WEEK_PREFIX = HOT_NEWS_WEEK + ":";
+	public static final String HOT_NEWS_WEEK_CACHE_TOP10 = HOT_NEWS_WEEK_PREFIX + "cache_top10";
+
+	// 更新用户新闻行为记录（即用户对某一新闻是否进行了支持、反对、收藏等操作，以及取消支持、取消反对、取消收藏等操作）
+	public static final String USER_NEWS_ACTION_PREFIX = "user_news_action:";
 }

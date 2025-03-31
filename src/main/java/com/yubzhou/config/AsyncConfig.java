@@ -29,21 +29,27 @@ public class AsyncConfig implements AsyncConfigurer {
 	}
 
 	// SSE 线程池
-	@Bean("sseTaskExecutor")
+	@Bean("sseTaskExecutor") // 指定 Bean 名称
 	public ThreadPoolTaskExecutor sseTaskExecutor() {
 		return buildExecutor(asyncProperties.getSse());
 	}
 
-	// 文件上传线程池
-	@Bean("uploadTaskExecutor")
+	// 文件上传 线程池
+	@Bean("uploadTaskExecutor") // 指定 Bean 名称
 	public ThreadPoolTaskExecutor uploadTaskExecutor() {
 		return buildExecutor(asyncProperties.getUpload());
 	}
 
-	// 全局默认线程池
+	// 显式定义全局线程池 Bean
+	@Bean("globalTaskExecutor") // 指定 Bean 名称
+	public ThreadPoolTaskExecutor globalTaskExecutor() {
+		return buildExecutor(asyncProperties.getGlobal());
+	}
+
+	// 全局默认线程池：覆盖 AsyncConfigurer 接口方法，返回全局线程池
 	@Override
 	public Executor getAsyncExecutor() {
-		return buildExecutor(asyncProperties.getGlobal());
+		return globalTaskExecutor();
 	}
 
 	// 构建线程池的通用方法
@@ -67,7 +73,9 @@ public class AsyncConfig implements AsyncConfigurer {
 		try {
 			Class<?> clazz = Class.forName(className);
 			Constructor<?> constructor = clazz.getDeclaredConstructor();
-			return (RejectedExecutionHandler) constructor.newInstance();
+			RejectedExecutionHandler handler = (RejectedExecutionHandler) constructor.newInstance();
+			log.info("创建拒绝策略实例: " + handler.getClass().getName());
+			return handler;
 		} catch (ClassNotFoundException e) {
 			throw new IllegalArgumentException("拒绝策略类不存在: " + className, e);
 		} catch (Exception e) {
@@ -90,70 +98,4 @@ public class AsyncConfig implements AsyncConfigurer {
 			log.warn("File upload queue full, rejecting task: {}", r.toString());
 		}
 	}
-
-	// @Bean("sseTaskExecutor")
-	// public ThreadPoolTaskExecutor sseTaskExecutor() {
-	// 	// ThreadPoolTaskExecutor的等待队列固定为 LinkedBlockingQueue
-	// 	ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-	// 	executor.setCorePoolSize(3);       // 核心线程数
-	// 	executor.setMaxPoolSize(10);       // 最大线程数=核心线程数+非核心线程数
-	// 	executor.setQueueCapacity(100);    // 队列容量
-	// 	executor.setKeepAliveSeconds(60);  // 非核心线程空闲存活时间
-	// 	executor.setThreadNamePrefix("sse-"); // 线程名前缀
-	// 	// executor.setThreadGroupName("AsyncGroup");
-	// 	executor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardPolicy()); // 拒绝策略：拒绝丢弃避免阻塞
-	// 	executor.setWaitForTasksToCompleteOnShutdown(true); // 关闭时等待任务完成
-	// 	executor.setAwaitTerminationSeconds(60); // 设置等待超时时间，超时后强制关闭线程池
-	// 	executor.initialize(); // 初始化线程池
-	// 	return executor;
-	// }
-	//
-	// @Bean("uploadTaskExecutor")
-	// public ThreadPoolTaskExecutor uploadTaskExecutor() {
-	// 	// ThreadPoolTaskExecutor的等待队列固定为 LinkedBlockingQueue
-	// 	ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-	// 	executor.setCorePoolSize(3);       // 核心线程数
-	// 	executor.setMaxPoolSize(10);       // 最大线程数=核心线程数+非核心线程数
-	// 	executor.setQueueCapacity(100);    // 队列容量
-	// 	executor.setKeepAliveSeconds(60);  // 非核心线程空闲存活时间
-	// 	executor.setThreadNamePrefix("upload-"); // 线程名前缀
-	// 	// executor.setThreadGroupName("AsyncGroup");
-	// 	executor.setRejectedExecutionHandler((r, e) -> {
-	// 		log.warn("File upload queue full, rejecting task: {}", r.toString());
-	// 	}); // 拒绝策略：记录日志后丢弃
-	// 	executor.setWaitForTasksToCompleteOnShutdown(true); // 关闭时等待任务完成
-	// 	executor.setAwaitTerminationSeconds(60); // 设置等待超时时间，超时后强制关闭线程池
-	// 	executor.initialize(); // 初始化线程池
-	// 	return executor;
-	// }
-	//
-	// // 全局默认线程池（即使用不带参数的@Async注解使用的线程池）
-	// @Override
-	// public Executor getAsyncExecutor() {
-	// 	ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-	// 	executor.setCorePoolSize(5);       // 核心线程数
-	// 	executor.setMaxPoolSize(10);       // 最大线程数=核心线程数+非核心线程数
-	// 	executor.setQueueCapacity(100);    // 队列容量
-	// 	executor.setKeepAliveSeconds(60);  // 非核心线程空闲存活时间
-	// 	executor.setThreadNamePrefix("async-global-"); // 线程名前缀
-	// 	executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy()); // 拒绝策略
-	// 	executor.setWaitForTasksToCompleteOnShutdown(true); // 关闭时等待任务完成
-	// 	executor.setAwaitTerminationSeconds(60); // 设置等待超时时间，超时后强制关闭线程池
-	// 	executor.initialize(); // 初始化线程池
-	// 	return executor;
-	// }
-
-	// // 全局异步异常处理器
-	// @Override
-	// public AsyncUncaughtExceptionHandler getAsyncUncaughtExceptionHandler() {
-	// 	return new GlobalAsyncExceptionHandler();
-	// }
-	//
-	// public static class GlobalAsyncExceptionHandler implements AsyncUncaughtExceptionHandler {
-	// 	@Override
-	// 	public void handleUncaughtException(Throwable ex, Method method, Object... params) {
-	// 		// 记录异常日志或发送告警
-	// 		log.error("Async task failed: {}.{}", method.getDeclaringClass().getSimpleName(), method.getName(), ex);
-	// 	}
-	// }
 }

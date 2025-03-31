@@ -4,6 +4,7 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.yubzhou.common.*;
 import com.yubzhou.exception.BusinessException;
+import com.yubzhou.exception.TokenInvalidException;
 import com.yubzhou.mapper.UserMapper;
 import com.yubzhou.model.po.User;
 import com.yubzhou.service.UserProfileService;
@@ -16,7 +17,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -31,13 +34,16 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 	private final JwtUtil jwtUtil;
 	private final RedisUtil redisUtil;
 	private final UserProfileService userProfileService;
+	private final ThreadPoolTaskExecutor globalTaskExecutor;
 
 	// 使用@Lazy注解，避免循环依赖
 	@Autowired
-	public UserServiceImpl(JwtUtil jwtUtil, RedisUtil redisUtil,@Lazy UserProfileService userProfileService) {
+	public UserServiceImpl(JwtUtil jwtUtil, RedisUtil redisUtil, @Lazy UserProfileService userProfileService,
+						   @Qualifier("globalTaskExecutor") ThreadPoolTaskExecutor globalTaskExecutor) {
 		this.jwtUtil = jwtUtil;
 		this.redisUtil = redisUtil;
 		this.userProfileService = userProfileService;
+		this.globalTaskExecutor = globalTaskExecutor;
 	}
 
 	/**
@@ -134,6 +140,18 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 		redisUtil.del(smsCaptchaKey, smsLockKey, smsErrorCountKey);
 	}
 
+	// 判断账号状态
+	private void checkUserStatus(User user) throws BusinessException {
+		switch (user.getStatus()) {
+			case DISABLED:
+				throw new BusinessException(ReturnCode.USER_DISABLED); // 账号被禁用
+			case LOCKED:
+				throw new BusinessException(ReturnCode.USER_LOCKED); // 账号被锁定
+			case LOGOUT:
+				throw new BusinessException(ReturnCode.USER_LOGOUT); // 账号已注销
+		}
+	}
+
 	/**
 	 * 登录用户
 	 *
@@ -150,19 +168,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 		// User user = this.getOne(queryWrapper); // 获取查询结果
 		User user = this.findByPhone(loginUser.getPhone());
 		// 验证手机号是否存在，以及密码是否正确
-		boolean isMatch = user != null && BCryptUtil.matches(loginUser.getPassword(), user.getPassword());
-		if (!isMatch) {
-			throw new BusinessException(ReturnCode.USERNAME_OR_PASSWORD_ERROR); // 登录失败
-		}
+		if (user == null) throw new BusinessException(ReturnCode.USER_NOT_FOUND); // 账号不存在
+		if (!BCryptUtil.matches(loginUser.getPassword(), user.getPassword()))
+			throw new BusinessException(ReturnCode.PASSWORD_ERROR); // 登录失败
 
-		switch (user.getStatus()) {
-			case DISABLED:
-				throw new BusinessException(ReturnCode.USER_DISABLED); // 账号被禁用
-			case LOCKED:
-				throw new BusinessException(ReturnCode.USER_LOCKED); // 账号被锁定
-			case LOGOUT:
-				throw new BusinessException(ReturnCode.USER_LOGOUT); // 账号已注销
-		}
+		// 检查账号状态，如果非正常状态，则抛出异常
+		checkUserStatus(user);
 
 		// 更新上次登录时间
 		this.updateLastLoginAt(user);
@@ -177,9 +188,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
 		// 查询用户
 		User user = this.findByPhone(loginUser.getPhone());
-		if (user == null) {
-			throw new BusinessException(ReturnCode.USER_NOT_FOUND); // 账号不存在
-		}
+		if (user == null) throw new BusinessException(ReturnCode.USER_NOT_FOUND); // 账号不存在
+
+		// 检查账号状态，如果非正常状态，则抛出异常
+		checkUserStatus(user);
 
 		// 更新上次登录时间
 		this.updateLastLoginAt(user);
@@ -214,7 +226,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 		// 验证refreshToken是否有效
 		DecodedJWT decodedJWT = jwtUtil.verifyEncryptedRefreshToken(encryptedRefreshToken);
 		if (decodedJWT == null) {
-			throw new BusinessException(ReturnCode.INVALID_TOKEN.getCode(), "refreshToken无效"); // 刷新失败，refreshToken无效
+			throw new TokenInvalidException("refreshToken无效"); // 刷新失败，refreshToken无效
 		}
 
 		// 获取refreshToken中用户相关的自定义声明
@@ -225,7 +237,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 		// 从redis缓存中获取该用户的refreshToken（未加密的）
 		String redisRefreshToken = this.getRefreshTokenFromRedis(userToken.getUserId());
 		if (!Objects.equals(redisRefreshToken, rawRefreshToken)) {
-			throw new BusinessException(ReturnCode.INVALID_TOKEN.getCode(), "refreshToken无效"); // 刷新失败，refreshToken无效
+			throw new TokenInvalidException("refreshToken无效"); // 刷新失败，refreshToken无效
 		}
 
 		// 如果redis中的与refreshToken一致，判断当前请求的fingerprint是否与refreshToken的fingerprint一致
@@ -233,7 +245,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 		String currentFingerprint = UserToken.generateFingerprint(request);
 		// 如果fingerprint不一致，则返回刷新失败
 		if (!Objects.equals(userToken.getFingerprint(), currentFingerprint)) {
-			throw new BusinessException(ReturnCode.INVALID_TOKEN.getCode(), "refreshToken无效"); // 刷新失败，refreshToken无效
+			throw new TokenInvalidException("refreshToken无效"); // 刷新失败，refreshToken无效
 		}
 
 		// 如果之前逻辑正确，则删除或禁用之前的refreshToken，替换为新的refreshToken
@@ -300,11 +312,28 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 				.one(); // 获取查询结果
 	}
 
+	// private void updateLastLoginAt(User user) {
+	// 	globalTaskExecutor.execute(() -> {
+	// 		this.lambdaUpdate()
+	// 				.set(User::getLastLoginAt, LocalDateTime.now())
+	// 				.eq(User::getId, user.getId())
+	// 				.update();
+	// 	});
+	// }
+
+	// 异步更新用户登录时间
 	private void updateLastLoginAt(User user) {
-		this.lambdaUpdate()
-				.set(User::getLastLoginAt, LocalDateTime.now())
-				.eq(User::getId, user.getId())
-				.update();
+		globalTaskExecutor.execute(() -> {
+			try {
+				this.lambdaUpdate()
+						.set(User::getLastLoginAt, LocalDateTime.now())
+						.eq(User::getId, user.getId())
+						.update();
+			} catch (Exception e) {
+				// 异常处理
+				log.error("updateLastLoginAt error: {}", e.getMessage());
+			}
+		});
 	}
 
 	private void verifyPassword(Long userId, String password) {
@@ -312,15 +341,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 		// 验证密码是否正确
 		boolean isMatch = user != null && BCryptUtil.matches(password, user.getPassword());
 		if (!isMatch) {
-			throw new BusinessException(ReturnCode.USERNAME_OR_PASSWORD_ERROR.getCode(), "原密码错误"); // 登录失败
+			throw new BusinessException(ReturnCode.PASSWORD_ERROR.getCode(), "原密码错误"); // 登录失败
 		}
 	}
 
-	private void setRefreshTokenToRedis(Long userId, String refreshToken) {
-		if (userId == null) {
-			log.warn("setRefreshTokenToRedis方法传入的 userId 为空，不执行设置操作");
-			return;
-		}
+	private void setRefreshTokenToRedis(@NonNull Long userId, String refreshToken) {
 		redisUtil.set(RedisConstant.USER_REFRESH_TOKEN_PREFIX + userId,
 				refreshToken,
 				RedisConstant.USER_REFRESH_TOKEN_EXPIRE_TIME);
@@ -330,11 +355,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 		return (String) redisUtil.get(RedisConstant.USER_REFRESH_TOKEN_PREFIX + userId);
 	}
 
-	private void deleteRefreshTokenFromRedis(Long userId) {
-		if (userId == null) {
-			log.warn("deleteRefreshTokenFromRedis方法传入的 userId 为空，不执行删除操作");
-			return;
-		}
+	private void deleteRefreshTokenFromRedis(@NonNull Long userId) {
 		redisUtil.del(RedisConstant.USER_REFRESH_TOKEN_PREFIX + userId);
 	}
 }

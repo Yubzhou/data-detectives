@@ -1,5 +1,6 @@
 package com.yubzhou.consumer;
 
+import com.yubzhou.common.KafkaConstant;
 import com.yubzhou.service.SseAsyncService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +21,7 @@ public class ResultConsumer {
 		this.sseAsyncServiceImpl = sseAsyncServiceImpl;
 	}
 
-	@KafkaListener(topics = "results", groupId = "sse-group")
+	@KafkaListener(topics = KafkaConstant.RESULT_TOPIC, groupId = KafkaConstant.RESULT_GROUP_ID)
 	public void handleResult(@Header(KafkaHeaders.RECEIVED_KEY) String requestId,
 							 @Payload String result) {
 		log.info("Received result for requestId: {}, result: {}", requestId, result);

@@ -1,5 +1,6 @@
 package com.yubzhou.controller;
 
+import com.yubzhou.common.KafkaConstant;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -33,7 +34,7 @@ public class ApiController {
 		assertHasText(requestId, data);
 
 		log.info("send request to kafka topic: requests, requestId: {}, data: {}", requestId, data);
-		kafkaTemplate.send("requests", requestId, data);
+		kafkaTemplate.send(KafkaConstant.REQUEST_TOPIC, requestId, data);
 		return ResponseEntity.ok("Request accepted");
 	}
 

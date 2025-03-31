@@ -2,6 +2,7 @@ package com.yubzhou.util;
 
 import com.yubzhou.common.ReturnCode;
 import com.yubzhou.exception.BusinessException;
+import com.yubzhou.exception.TokenInvalidException;
 import org.springframework.util.StringUtils;
 
 import java.util.regex.Pattern;
@@ -34,6 +35,8 @@ public class LocalAssert {
 
 	// 判断token是否为空
 	public static void assertTokenHasText(String token, String message) {
-		hasText(token, ReturnCode.RC401.getCode(), message);
+		if (!StringUtils.hasText(token)) {
+			throw new TokenInvalidException(message);
+		}
 	}
 }
