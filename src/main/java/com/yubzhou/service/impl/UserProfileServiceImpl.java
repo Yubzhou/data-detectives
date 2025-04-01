@@ -38,7 +38,6 @@ public class UserProfileServiceImpl extends ServiceImpl<UserProfileMapper, UserP
 		this.save(profile);
 	}
 
-
 	@Override
 	public UserProfileVo getProfileByUserId() {
 		long userId = WebContextUtil.getCurrentUserId();
@@ -51,15 +50,8 @@ public class UserProfileServiceImpl extends ServiceImpl<UserProfileMapper, UserP
 
 		// 查询用户信息（手机和注册时间）
 		User user = userService.findByUserId(userId);
-		// 数据脱敏，将手机号脱敏
-		user.setPhone(this.getPhoneMasked(user.getPhone()));
-
+		// 转为Vo对象并返回
 		return UserProfileVo.fromUserProfile(profile, user.getPhone(), user.getCreatedAt());
-	}
-
-	private String getPhoneMasked(String phone) {
-		// 将手机号的第4-8位进行隐藏
-		return phone.substring(0, 3) + "*****" + phone.substring(8);
 	}
 
 	@Override

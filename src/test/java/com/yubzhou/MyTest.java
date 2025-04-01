@@ -10,8 +10,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 
 import java.security.SecureRandom;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.CompletionException;
 import java.util.regex.Matcher;
@@ -271,5 +273,18 @@ public class MyTest {
 	@Test
 	public void test16() throws Exception {
 		IntStream.range(1, 23).forEach(System.out::println);
+	}
+
+	@Test
+	public void test17() throws Exception {
+		// 创建两个 LocalDateTime 对象
+		LocalDateTime dateTime1 = LocalDateTime.of(2025, 4, 2, 14, 59, 59);
+		// LocalDateTime dateTime2 = LocalDateTime.of(2023, 10, 5, 12, 0);
+
+		// 计算天数差值
+		long daysBetween = ChronoUnit.DAYS.between(dateTime1, LocalDateTime.now());
+
+		System.out.println("天数差值: " + daysBetween); // 输出: 天数差值: 4
+
 	}
 }

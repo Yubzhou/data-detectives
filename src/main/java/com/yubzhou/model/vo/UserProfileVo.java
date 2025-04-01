@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Set;
 
 @Data
@@ -25,17 +26,29 @@ public class UserProfileVo {
 
 	private Set<String> interestedFields; // 兴趣领域
 
-	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
-	private LocalDateTime registerTime; // 注册时间
+	private long registerDays; // 注册天数
 
 	public static UserProfileVo fromUserProfile(UserProfile profile, String phone, LocalDateTime registerTime) {
 		UserProfileVo vo = new UserProfileVo();
 		vo.setUserId(profile.getUserId());
-		vo.setPhone(phone);
+		// 数据脱敏，将手机号脱敏
+		vo.setPhone(getPhoneMasked(phone));
 		vo.setGender(profile.getGender());
 		vo.setAvatarUrl(profile.getAvatarUrl());
 		vo.setInterestedFields(profile.getInterestedFields());
-		vo.setRegisterTime(registerTime);
+		// 将注册时间转为注册天数
+		vo.setRegisterDays(getRegisterDays(registerTime));
 		return vo;
+	}
+
+	// 数据脱敏，将手机号脱敏
+	private static String getPhoneMasked(String phone) {
+		// 将手机号的第4-8位进行隐藏
+		return phone.substring(0, 3) + "*****" + phone.substring(8);
+	}
+
+	// 将注册时间转为注册天数
+	private static long getRegisterDays(LocalDateTime registerTime) {
+		return ChronoUnit.DAYS.between(registerTime, LocalDateTime.now());
 	}
 }
