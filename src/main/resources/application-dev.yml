@@ -72,4 +72,4 @@ task:
     thread-name-prefix: task-scheduler-
     reject-policy: java.util.concurrent.ThreadPoolExecutor$AbortPolicy
     wait-for-tasks-to-complete-on-shutdown: true
-    await-termination-seconds: 60
+    await-termination-seconds: 10

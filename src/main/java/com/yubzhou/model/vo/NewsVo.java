@@ -1,4 +1,4 @@
-package com.yubzhou.model;
+package com.yubzhou.model.vo;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
