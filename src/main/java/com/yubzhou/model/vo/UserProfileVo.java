@@ -33,6 +33,7 @@ public class UserProfileVo {
 		vo.setUserId(profile.getUserId());
 		// 数据脱敏，将手机号脱敏
 		vo.setPhone(getPhoneMasked(phone));
+		vo.setNickname(profile.getNickname());
 		vo.setGender(profile.getGender());
 		vo.setAvatarUrl(profile.getAvatarUrl());
 		vo.setInterestedFields(profile.getInterestedFields());
