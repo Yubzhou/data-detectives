@@ -6,6 +6,7 @@ import com.yubzhou.common.ReturnCode;
 import com.yubzhou.model.dto.RegisterUserProfileDto;
 import com.yubzhou.model.dto.UpdateUserPasswordDto;
 import com.yubzhou.model.po.UserProfile;
+import com.yubzhou.model.vo.UserProfileVo;
 import com.yubzhou.service.UserProfileService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -34,7 +35,7 @@ public class UserProfileController {
 
 	@GetMapping("")
 	public Result<?> getProfileByUserId() {
-		UserProfile profile = userProfileService.getProfileByUserId();
+		UserProfileVo profile = userProfileService.getProfileByUserId();
 		if (profile == null) {
 			return Result.fail(ReturnCode.USER_NOT_FOUND.getCode(), "获取个人信息失败：账号不存在");
 		}

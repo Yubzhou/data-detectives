@@ -3,6 +3,7 @@ package com.yubzhou.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.yubzhou.model.dto.UpdateUserPasswordDto;
 import com.yubzhou.model.po.UserProfile;
+import com.yubzhou.model.vo.UserProfileVo;
 
 import java.util.Set;
 
@@ -10,7 +11,7 @@ public interface UserProfileService extends IService<UserProfile>  {
 
 	void insertUserProfile(Long userId);
 
-	UserProfile getProfileByUserId();
+	UserProfileVo getProfileByUserId();
 
 	void updateInterests(Set<String> interests);
 

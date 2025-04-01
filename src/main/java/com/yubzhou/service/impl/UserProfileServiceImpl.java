@@ -6,7 +6,9 @@ import com.yubzhou.common.ReturnCode;
 import com.yubzhou.exception.BusinessException;
 import com.yubzhou.mapper.UserProfileMapper;
 import com.yubzhou.model.dto.UpdateUserPasswordDto;
+import com.yubzhou.model.po.User;
 import com.yubzhou.model.po.UserProfile;
+import com.yubzhou.model.vo.UserProfileVo;
 import com.yubzhou.service.UserProfileService;
 import com.yubzhou.service.UserService;
 import com.yubzhou.util.WebContextUtil;
@@ -38,14 +40,26 @@ public class UserProfileServiceImpl extends ServiceImpl<UserProfileMapper, UserP
 
 
 	@Override
-	public UserProfile getProfileByUserId() {
+	public UserProfileVo getProfileByUserId() {
 		long userId = WebContextUtil.getCurrentUserId();
-		return this.lambdaQuery()
+		UserProfile profile = this.lambdaQuery()
 				.select(UserProfile::getId, UserProfile::getUserId, UserProfile::getNickname, UserProfile::getGender,
 						UserProfile::getAvatarUrl, UserProfile::getInterestedFields)
 				.eq(UserProfile::getUserId, userId)
 				.last("LIMIT 1")
 				.one();
+
+		// 查询用户信息（手机和注册时间）
+		User user = userService.findByUserId(userId);
+		// 数据脱敏，将手机号脱敏
+		user.setPhone(this.getPhoneMasked(user.getPhone()));
+
+		return UserProfileVo.fromUserProfile(profile, user.getPhone(), user.getCreatedAt());
+	}
+
+	private String getPhoneMasked(String phone) {
+		// 将手机号的第4-8位进行隐藏
+		return phone.substring(0, 3) + "*****" + phone.substring(8);
 	}
 
 	@Override

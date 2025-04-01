@@ -77,81 +77,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 		return this.generateTokens(user, request);
 	}
 
-	private Map<String, String> generateTokens(User user, HttpServletRequest request) {
-		// 获取当前请求的IP和User-Agent来生成fingerprint
-		String fingerprint = UserToken.generateFingerprint(request);
-		UserToken userToken = UserToken.of(user.getId(), user.getRole(), fingerprint);
-		String accessToken = jwtUtil.generateAccessToken(userToken);
-		String rawRefreshToken = jwtUtil.generateRefreshToken(userToken);
-		String encryptedRefreshToken = jwtUtil.generateEncryptedRefreshToken(rawRefreshToken);
-		if (!StringUtils.hasText(accessToken)
-				|| !StringUtils.hasText(rawRefreshToken)
-				|| !StringUtils.hasText(encryptedRefreshToken)) {
-			log.error("token生成失败：系统异常，请联系管理员");
-			throw new BusinessException(ReturnCode.TOKEN_GENERATE_ERROR.getCode(), "token生成失败：系统异常，请联系管理员"); // 令牌生成失败
-		}
-		// 将rawRefreshToken存入redis缓存中
-		this.setRefreshTokenToRedis(user.getId(), rawRefreshToken);
-		// 登陆成功，返回访问令牌和刷新令牌
-		return Map.of("accessToken", accessToken, "refreshToken", encryptedRefreshToken);
-	}
-
-	private void smsCaptchaHandler(User user, String captcha) throws BusinessException {
-		// 检查账号是否被锁定（验证码错误次数限制，如5次错误后锁定1小时）
-		String smsLockKey = RedisConstant.SMS_LOCK_PREFIX + user.getPhone();
-		if (redisUtil.hasKey(smsLockKey)) {
-			throw new BusinessException(403, "验证码错误次数过多，账号验证码校验功能已锁定，请1小时后重试"); // 账号被锁定
-		}
-		// 从Redis获取验证码
-		String smsCaptchaKey = RedisConstant.SMS_CAPTCHA_PREFIX + user.getPhone();
-		String storedCaptcha = (String) redisUtil.get(smsCaptchaKey);
-
-		// Yubzhou TODO 2025/3/21 11:17; 测试使用：先将验证码定死为123456
-		storedCaptcha = "123456";
-
-		// 验证码校验
-		if (storedCaptcha == null) {
-			// 验证码已过期
-			throw new BusinessException(ReturnCode.RC400.getCode(), "验证码已过期");
-		}
-
-		// 验证码错误（1小时内错误次数超过5次，则锁定验证码登录功能1小时）
-		String smsErrorCountKey = RedisConstant.SMS_ERROR_COUNT_PREFIX + user.getPhone();
-		if (!Objects.equals(storedCaptcha, captcha)) {
-			// 错误计数器+1
-			long errorCount = redisUtil.incr(smsErrorCountKey, 1);
-
-			// 首次错误设置过期时间（1小时自动清理）
-			if (errorCount == 1L) {
-				redisUtil.expire(smsErrorCountKey, RedisConstant.SMS_LOCK_EXPIRE_TIME);
-			}
-
-			// 错误超过5次触发锁定（1小时后自动解锁）
-			if (errorCount >= 5) {
-				redisUtil.set(smsLockKey, true, RedisConstant.SMS_LOCK_EXPIRE_TIME);
-				redisUtil.del(smsErrorCountKey); // 清除计数器
-				throw new BusinessException(403, "验证码错误次数过多，账号验证码校验功能已锁定，请1小时后重试");
-			}
-
-			throw new BusinessException(400, "验证码校验错误，剩余尝试次数：" + (5 - errorCount)); // 验证码错误
-		}
-
-		// 验证成功后，删除验证码，清理安全状态
-		redisUtil.del(smsCaptchaKey, smsLockKey, smsErrorCountKey);
-	}
-
-	// 判断账号状态
-	private void checkUserStatus(User user) throws BusinessException {
-		switch (user.getStatus()) {
-			case DISABLED:
-				throw new BusinessException(ReturnCode.USER_DISABLED); // 账号被禁用
-			case LOCKED:
-				throw new BusinessException(ReturnCode.USER_LOCKED); // 账号被锁定
-			case LOGOUT:
-				throw new BusinessException(ReturnCode.USER_LOGOUT); // 账号已注销
-		}
-	}
-
 	/**
 	 * 登录用户
 	 *
@@ -295,20 +220,96 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 				.update();
 	}
 
+	// 根据用户ID查询用户部分信息
+	@Override
+	public User findByUserId(@NonNull Long userId) {
+		return this.lambdaQuery()
+				// 只查询用户ID、手机、密码、创建时间
+				.select(User::getId, User::getPhone, User::getPassword, User::getCreatedAt)
+				.eq(User::getId, userId) // 根据用户ID查询
+				.one(); // 获取查询结果
+	}
+
+	private Map<String, String> generateTokens(User user, HttpServletRequest request) {
+		// 获取当前请求的IP和User-Agent来生成fingerprint
+		String fingerprint = UserToken.generateFingerprint(request);
+		UserToken userToken = UserToken.of(user.getId(), user.getRole(), fingerprint);
+		String accessToken = jwtUtil.generateAccessToken(userToken);
+		String rawRefreshToken = jwtUtil.generateRefreshToken(userToken);
+		String encryptedRefreshToken = jwtUtil.generateEncryptedRefreshToken(rawRefreshToken);
+		if (!StringUtils.hasText(accessToken)
+				|| !StringUtils.hasText(rawRefreshToken)
+				|| !StringUtils.hasText(encryptedRefreshToken)) {
+			log.error("token生成失败：系统异常，请联系管理员");
+			throw new BusinessException(ReturnCode.TOKEN_GENERATE_ERROR.getCode(), "token生成失败：系统异常，请联系管理员"); // 令牌生成失败
+		}
+		// 将rawRefreshToken存入redis缓存中
+		this.setRefreshTokenToRedis(user.getId(), rawRefreshToken);
+		// 登陆成功，返回访问令牌和刷新令牌
+		return Map.of("accessToken", accessToken, "refreshToken", encryptedRefreshToken);
+	}
+
+	private void smsCaptchaHandler(User user, String captcha) throws BusinessException {
+		// 检查账号是否被锁定（验证码错误次数限制，如5次错误后锁定1小时）
+		String smsLockKey = RedisConstant.SMS_LOCK_PREFIX + user.getPhone();
+		if (redisUtil.hasKey(smsLockKey)) {
+			throw new BusinessException(403, "验证码错误次数过多，账号验证码校验功能已锁定，请1小时后重试"); // 账号被锁定
+		}
+		// 从Redis获取验证码
+		String smsCaptchaKey = RedisConstant.SMS_CAPTCHA_PREFIX + user.getPhone();
+		String storedCaptcha = (String) redisUtil.get(smsCaptchaKey);
+
+		// Yubzhou TODO 2025/3/21 11:17; 测试使用：先将验证码定死为123456
+		storedCaptcha = "123456";
+
+		// 验证码校验
+		if (storedCaptcha == null) {
+			// 验证码已过期
+			throw new BusinessException(ReturnCode.RC400.getCode(), "验证码已过期");
+		}
+
+		// 验证码错误（1小时内错误次数超过5次，则锁定验证码登录功能1小时）
+		String smsErrorCountKey = RedisConstant.SMS_ERROR_COUNT_PREFIX + user.getPhone();
+		if (!Objects.equals(storedCaptcha, captcha)) {
+			// 错误计数器+1
+			long errorCount = redisUtil.incr(smsErrorCountKey, 1);
+
+			// 首次错误设置过期时间（1小时自动清理）
+			if (errorCount == 1L) {
+				redisUtil.expire(smsErrorCountKey, RedisConstant.SMS_LOCK_EXPIRE_TIME);
+			}
+
+			// 错误超过5次触发锁定（1小时后自动解锁）
+			if (errorCount >= 5) {
+				redisUtil.set(smsLockKey, true, RedisConstant.SMS_LOCK_EXPIRE_TIME);
+				redisUtil.del(smsErrorCountKey); // 清除计数器
+				throw new BusinessException(403, "验证码错误次数过多，账号验证码校验功能已锁定，请1小时后重试");
+			}
+
+			throw new BusinessException(400, "验证码校验错误，剩余尝试次数：" + (5 - errorCount)); // 验证码错误
+		}
+
+		// 验证成功后，删除验证码，清理安全状态
+		redisUtil.del(smsCaptchaKey, smsLockKey, smsErrorCountKey);
+	}
+
+	// 判断账号状态
+	private void checkUserStatus(User user) throws BusinessException {
+		switch (user.getStatus()) {
+			case DISABLED:
+				throw new BusinessException(ReturnCode.USER_DISABLED); // 账号被禁用
+			case LOCKED:
+				throw new BusinessException(ReturnCode.USER_LOCKED); // 账号被锁定
+			case LOGOUT:
+				throw new BusinessException(ReturnCode.USER_LOGOUT); // 账号已注销
+		}
+	}
 
 	private User findByPhone(String phone) {
 		return this.lambdaQuery()
 				// 只查询用户ID、手机号、密码、角色、状态
 				.select(User::getId, User::getPhone, User::getPassword, User::getRole, User::getStatus)
 				.eq(User::getPhone, phone) // 根据手机号查询
-				.one(); // 获取查询结果
-	}
-
-	private User findByUserId(@NonNull Long userId) {
-		return this.lambdaQuery()
-				// 只查询用户ID、密码
-				.select(User::getId, User::getPassword)
-				.eq(User::getId, userId) // 根据用户ID查询
 				.one(); // 获取查询结果
 	}
 
