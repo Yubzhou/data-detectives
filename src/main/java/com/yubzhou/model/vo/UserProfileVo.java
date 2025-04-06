@@ -1,6 +1,5 @@
 package com.yubzhou.model.vo;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.yubzhou.model.po.UserProfile;
 import lombok.AllArgsConstructor;
 import lombok.Data;

@@ -6,6 +6,7 @@ import org.springframework.aop.interceptor.AsyncUncaughtExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.scheduling.annotation.AsyncConfigurer;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -42,6 +43,7 @@ public class AsyncConfig implements AsyncConfigurer {
 
 	// 显式定义全局线程池 Bean
 	@Bean("globalTaskExecutor") // 指定 Bean 名称
+	@Primary                    // 标记为首选的，如果不指定@Qualifier，则默认注入该Bean
 	public ThreadPoolTaskExecutor globalTaskExecutor() {
 		return buildExecutor(asyncProperties.getGlobal());
 	}

@@ -2,7 +2,6 @@ package com.yubzhou.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.yubzhou.common.UserToken;
-import com.yubzhou.model.dto.LoginUserDto;
 import com.yubzhou.model.po.User;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.NonNull;

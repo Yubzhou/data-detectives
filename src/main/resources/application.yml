@@ -310,6 +310,11 @@ file-upload:
     upload-dir: ./uploads/images # 与项目目录同级的 uploads/images 目录
     # 配置图片访问路径
     access-url: /uploads/images/ # 图片访问路径
+  json:
+    # 配置json上传路径
+    upload-dir: ./uploads/json # 与项目目录同级的 uploads/json 目录
+    # 配置json访问路径
+    access-url: /uploads/json/ # json访问路径
 
 
 # 自定义配置，用于系统信息配置

@@ -59,8 +59,8 @@ async:
     await-termination-seconds: 120  # 大文件需要更长时间
   global:
     core-pool-size: "#{ ${async.available-processors} * 1 }"
-    max-pool-size: "#{ ${async.available-processors} * 2 }"
-    queue-capacity: 200
+    max-pool-size: "#{ ${async.available-processors} * 4 }"
+    queue-capacity: 1000
     keep-alive-seconds: 60
     thread-name-prefix: global-async-
     # 拒绝策略的类全名（如 java.util.concurrent.ThreadPoolExecutor$DiscardPolicy）
@@ -76,4 +76,4 @@ task:
     thread-name-prefix: task-scheduler-
     reject-policy: java.util.concurrent.ThreadPoolExecutor$AbortPolicy
     wait-for-tasks-to-complete-on-shutdown: true
-    await-termination-seconds: 10
+    await-termination-seconds: 5

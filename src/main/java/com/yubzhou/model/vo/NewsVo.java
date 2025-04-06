@@ -1,32 +1,34 @@
 package com.yubzhou.model.vo;
 
+import com.yubzhou.common.UserActionEvent.ActionType;
+import com.yubzhou.model.po.News;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.Set;
+import java.util.Map;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class NewsVo {
-	private Long id; // 新闻ID
+	private News news;
+	private UserNewsAction actions;
 
-	private String title; // 新闻标题
+	@Data
+	@NoArgsConstructor
+	@AllArgsConstructor
+	public static class UserNewsAction {
+		private Boolean support;
+		private Boolean oppose;
+		private Boolean favorite;
 
-	private String content; // 新闻内容
-
-	private Integer views; // 浏览量
-
-	private Integer supports; // 支持数
-
-	private Integer opposes; // 反对数
-
-	private Integer comments; // 评论数
-
-	private Integer favorites; // 收藏数
-
-	private String createdAt; // 创建时间
-
-	private Set<String> categories; // 新闻分类
+		public static UserNewsAction of(Map<String, Map<Object, Boolean>> userNewsActionMap, long newsId) {
+			UserNewsAction actions = new UserNewsAction();
+			actions.setSupport(userNewsActionMap.get(ActionType.SUPPORT.getField()).get(newsId));
+			actions.setOppose(userNewsActionMap.get(ActionType.OPPOSE.getField()).get(newsId));
+			actions.setFavorite(userNewsActionMap.get(ActionType.FAVORITE.getField()).get(newsId));
+			return actions;
+		}
+	}
 }

@@ -18,8 +18,15 @@ public class LocalAssert {
 		}
 	}
 
-	// 判断一个数是否为正数
+	// 判断一个数是否为正整数
 	public static void assertPositive(int num, String message) {
+		if (num <= 0) {
+			throw new BusinessException(ReturnCode.RC400.getCode(), message);
+		}
+	}
+
+	// 判断一个数是否为正整数
+	public static void assertPositive(long num, String message) {
 		if (num <= 0) {
 			throw new BusinessException(ReturnCode.RC400.getCode(), message);
 		}

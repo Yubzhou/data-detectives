@@ -1,6 +1,8 @@
 package com.yubzhou;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.yubzhou.common.RedisConstant;
+import com.yubzhou.common.UserActionEvent;
 import com.yubzhou.common.UserRole;
 
 import java.time.LocalDateTime;
@@ -11,7 +13,10 @@ import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yubzhou.consumer.HotNewsService;
+import com.yubzhou.model.po.News;
 import com.yubzhou.model.po.User;
+import com.yubzhou.util.HotNewsUtil;
 import com.yubzhou.util.RedisUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
@@ -34,6 +39,9 @@ public class RedisTest {
 
 	@Autowired
 	private RedisUtil redisUtil;
+
+	@Autowired
+	private HotNewsService hotNewsService;
 
 	@Test
 	public void testGetReturnValue() {
@@ -427,5 +435,31 @@ public class RedisTest {
 		value = redisUtil.get("user", User.class);
 		log.info("value: {}; type: {}", value, value.getClass());
 	}
+
+	@Test
+	public void test14() throws Exception {
+		List<News> newsList = List.of(
+				new News(70L),
+				new News(71L),
+				new News(72L),
+				new News(73L),
+				new News(74L)
+		);
+
+		// Long[] userIds = newsList.stream().map(News::getId).toArray(Long[]::new);
+		Object[] userIds = newsList.stream().map(News::getId).toArray();
+
+		String userKeyPrefix = RedisConstant.USER_NEWS_ACTION_PREFIX + 4 + ":";
+		String viewsKey = userKeyPrefix + UserActionEvent.ActionType.VIEW.getField();
+
+		Map<Object, Boolean> views = redisUtil.sHasKeys(viewsKey, userIds);
+
+		System.out.println(views);
+
+		for (Map.Entry<Object, Boolean> entry : views.entrySet()) {
+			System.out.println(entry.getKey() + ": " + entry.getValue() + "; key type: " + entry.getKey().getClass());
+		}
+	}
+
 
 }

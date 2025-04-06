@@ -42,14 +42,35 @@ public class FileUploadServiceImpl implements FileUploadService {
 			throw new BusinessException(ReturnCode.RC400.getCode(), "仅支持单个文件上传");
 		}
 		// 异步上传图片
-		return CompletableFuture.supplyAsync(() -> uploadHandler(files, allowedTypes), uploadTaskExecutor);
+		return CompletableFuture.supplyAsync(() -> uploadImageHandler(files, allowedTypes), uploadTaskExecutor);
 	}
 
 	// 上传多个图片（异步）
 	@Override
 	public CompletableFuture<UploadResult> uploadImages(MultipartFile[] files, Set<MediaType> allowedTypes) {
 		// 异步上传图片
-		return CompletableFuture.supplyAsync(() -> uploadHandler(files, allowedTypes), uploadTaskExecutor);
+		return CompletableFuture.supplyAsync(() -> uploadImageHandler(files, allowedTypes), uploadTaskExecutor);
+	}
+
+	// 上传JSON文件（异步）
+	@Override
+	public CompletableFuture<UploadResult> uploadJson(MultipartFile[] files, Set<MediaType> allowedTypes) {
+		// if (files != null && files.length != 1) {
+		// 	throw new BusinessException(ReturnCode.RC400.getCode(), "仅支持单个文件上传");
+		// }
+		return CompletableFuture.supplyAsync(() -> uploadJsonHandler(files, allowedTypes), uploadTaskExecutor);
+	}
+
+	private UploadResult uploadImageHandler(MultipartFile[] files, Set<MediaType> allowedTypes) {
+		// 获取图片上传目录（相对路径）
+		String relativeUploadDir = fileUploadProperties.getImage().getUploadDir();
+		return uploadHandler(files, allowedTypes, relativeUploadDir);
+	}
+
+	private UploadResult uploadJsonHandler(MultipartFile[] files, Set<MediaType> allowedTypes) {
+		// 获取Json上传目录（相对路径）
+		String relativeUploadDir = fileUploadProperties.getJson().getUploadDir();
+		return uploadHandler(files, allowedTypes, relativeUploadDir);
 	}
 
 	/**
@@ -59,7 +80,7 @@ public class FileUploadServiceImpl implements FileUploadService {
 	 * @param allowedTypes 允许的文件类型
 	 * @return 上传结果
 	 */
-	private UploadResult uploadHandler(MultipartFile[] files, Set<MediaType> allowedTypes) {
+	private UploadResult uploadHandler(MultipartFile[] files, Set<MediaType> allowedTypes, String relativeUploadDir) {
 		if (files == null || files.length == 0) {
 			throw new BusinessException(ReturnCode.RC400.getCode(), "上传文件不能为空");
 		}
@@ -84,10 +105,10 @@ public class FileUploadServiceImpl implements FileUploadService {
 		Queue<UploadResult.SuccessInfo> successFiles = new ConcurrentLinkedQueue<>();
 		Queue<UploadResult.ErrorInfo> errorFiles = new ConcurrentLinkedQueue<>();
 
-		// 获取图片上传目录（相对路径）
-		String uploadDir = fileUploadProperties.getImage().getUploadDir();
+		// // 获取图片上传目录（相对路径）
+		// String relativeUploadDir = fileUploadProperties.getImage().getUploadDir();
 		// 获取安全的绝对路径
-		Path uploadPath = PathUtil.getExternalPath(uploadDir);
+		Path uploadPath = PathUtil.getExternalPath(relativeUploadDir);
 
 		try {
 			// 创建多级目录

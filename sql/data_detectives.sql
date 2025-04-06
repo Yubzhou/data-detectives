@@ -51,15 +51,15 @@ CREATE TABLE IF NOT EXISTS news
     id         BIGINT UNSIGNED AUTO_INCREMENT COMMENT '新闻ID',
     title      VARCHAR(200) NOT NULL COMMENT '新闻标题',
     content    TEXT         NOT NULL COMMENT '新闻内容',
-    views      INT UNSIGNED DEFAULT 0 COMMENT '浏览量',
-    supports   INT UNSIGNED DEFAULT 0 COMMENT '支持数',
-    opposes    INT UNSIGNED DEFAULT 0 COMMENT '反对数',
-    comments   INT UNSIGNED DEFAULT 0 COMMENT '评论数',
-    favorites  INT UNSIGNED DEFAULT 0 COMMENT '收藏数',
-    created_at DATETIME     DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    updated_at DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    views      INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '浏览量',
+    supports   INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '支持数',
+    opposes    INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '反对数',
+    comments   INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '评论数',
+    favorites  INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '收藏数',
+    version    INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '版本号（用于乐观锁更新）',
+    created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    updated_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (id),
-    INDEX idx_hot (views DESC, supports DESC),
     INDEX idx_time (created_at DESC)
 ) COMMENT '新闻表';
 
@@ -100,6 +100,5 @@ CREATE TABLE IF NOT EXISTS user_news
 (
     user_id BIGINT UNSIGNED NOT NULL COMMENT '用户ID',
     news_id BIGINT UNSIGNED NOT NULL COMMENT '新闻ID',
-
     PRIMARY KEY (user_id, news_id)
 ) COMMENT '用户-新闻关联表';

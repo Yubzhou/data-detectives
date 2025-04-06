@@ -14,8 +14,11 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -286,5 +289,30 @@ public class MyTest {
 
 		System.out.println("天数差值: " + daysBetween); // 输出: 天数差值: 4
 
+	}
+
+	@Test
+	public void test18() throws Exception {
+		Executors.newSingleThreadExecutor().execute(() -> {
+			System.out.println(Thread.currentThread().getId());
+			System.out.println(Thread.currentThread().getName());
+		});
+		System.out.println(Thread.currentThread().getId());
+		System.out.println(Thread.currentThread().getName());
+	}
+
+	@Test
+	public void test19() throws Exception {
+		Set<Object> set = Set.of(1L, 2L, 3L);
+		System.out.println(set.contains(1L));
+		System.out.println(set.contains(1));
+		System.out.println(set.contains(4L));
+	}
+
+	@Test
+	public void test20() throws Exception {
+		Class<Long> clazz = Long.class;
+		Integer a = 1;
+		System.out.println(clazz.cast(a));
 	}
 }

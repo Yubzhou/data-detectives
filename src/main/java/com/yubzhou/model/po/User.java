@@ -2,9 +2,11 @@ package com.yubzhou.model.po;
 
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.yubzhou.common.UserRole;
 import com.yubzhou.common.UserStatus;
+import com.yubzhou.util.DateTimeUtil;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -32,9 +34,12 @@ public class User {
 
 	private UserStatus status; // 用户状态
 
+	@JsonFormat(pattern = DateTimeUtil.LOCAL_DATE_TIME_NO_MILLIS_FORMAT)
 	private LocalDateTime createdAt; // 创建时间
 
+	@JsonFormat(pattern = DateTimeUtil.LOCAL_DATE_TIME_NO_MILLIS_FORMAT)
 	private LocalDateTime updatedAt; // 更新时间
 
+	@JsonFormat(pattern = DateTimeUtil.LOCAL_DATE_TIME_NO_MILLIS_FORMAT)
 	private LocalDateTime lastLoginAt; // 最后登录时间
 }

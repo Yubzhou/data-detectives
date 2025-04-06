@@ -42,6 +42,16 @@ public class UserActionEvent {
 		public static final Set<String> ACTION_TYPES =
 				Stream.of(ActionType.values()).map(value -> value.name().toLowerCase()).collect(Collectors.toSet());
 
+		// 判断是否为取消操作
+		public boolean isCancelAction() {
+			return this.name().startsWith("UN");
+		}
+
+		// 是否为支持、反对、收藏动作
+		public boolean isSupportOrOpposeOrFavorite() {
+			return this == SUPPORT || this == OPPOSE || this == FAVORITE;
+		}
+
 		public static ActionType from(String actionType) {
 			ActionType type = null;
 			try {
@@ -55,11 +65,11 @@ public class UserActionEvent {
 		}
 
 		public static double calculateHotScore(Map<Object, Object> metrics) {
-			int views = (int) metrics.getOrDefault(ActionType.VIEW.getField(), 0);
-			int supports = (int) metrics.getOrDefault(ActionType.SUPPORT.getField(), 0);
-			int opposes = (int) metrics.getOrDefault(ActionType.OPPOSE.getField(), 0);
-			int comments = (int) metrics.getOrDefault(ActionType.COMMENT.getField(), 0);
-			int favorites = (int) metrics.getOrDefault(ActionType.FAVORITE.getField(), 0);
+			int views = (int) metrics.getOrDefault(VIEW.getField(), 0);
+			int supports = (int) metrics.getOrDefault(SUPPORT.getField(), 0);
+			int opposes = (int) metrics.getOrDefault(OPPOSE.getField(), 0);
+			int comments = (int) metrics.getOrDefault(COMMENT.getField(), 0);
+			int favorites = (int) metrics.getOrDefault(FAVORITE.getField(), 0);
 			return Math.log(views + 1) * VIEW.getWeight()
 					+ (supports + opposes) * SUPPORT.getWeight()
 					+ comments * COMMENT.getWeight()

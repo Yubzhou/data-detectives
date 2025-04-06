@@ -227,6 +227,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 				// 只查询用户ID、手机、密码、创建时间
 				.select(User::getId, User::getPhone, User::getPassword, User::getCreatedAt)
 				.eq(User::getId, userId) // 根据用户ID查询
+				.last("LIMIT 1")
 				.one(); // 获取查询结果
 	}
 
@@ -310,6 +311,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 				// 只查询用户ID、手机号、密码、角色、状态
 				.select(User::getId, User::getPhone, User::getPassword, User::getRole, User::getStatus)
 				.eq(User::getPhone, phone) // 根据手机号查询
+				.last("LIMIT 1")
 				.one(); // 获取查询结果
 	}
 

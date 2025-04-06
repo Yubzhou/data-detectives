@@ -1,61 +1,71 @@
 package com.yubzhou.controller;
 
-import com.yubzhou.util.HotNewsUtil;
-import com.yubzhou.common.RedisConstant;
 import com.yubzhou.common.Result;
-import com.yubzhou.util.RedisUtil;
+import com.yubzhou.common.ReturnCode;
+import com.yubzhou.consumer.HotNewsCacheService;
+import com.yubzhou.model.pojo.HotNews;
+import com.yubzhou.model.vo.NewsVo;
+import com.yubzhou.util.WebContextUtil;
+import jakarta.validation.constraints.Max;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.ZSetOperations;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequestMapping("/api/news")
+@Validated
+@Slf4j
 public class HotNewsController {
-	private final RedisUtil redisUtil;
+	private final HotNewsCacheService hotNewsCacheService;
 
 	@Autowired
-	public HotNewsController(RedisUtil redisUtil) {
-		this.redisUtil = redisUtil;
+	public HotNewsController(HotNewsCacheService hotNewsCacheService) {
+		this.hotNewsCacheService = hotNewsCacheService;
 	}
 
-	// 查询1小时实时热点
-	@GetMapping("/hot/1h")
-	public Result<?> get1hHot() {
-		String hourKey = RedisConstant.HOT_NEWS_HOUR_PREFIX + HotNewsUtil.getCurrentHour();
-		return Result.success(getHotNews(hourKey, 10));
+	// 查询1小时缓存热点top10
+	@GetMapping("/hot/1h/top10")
+	public Result<List<HotNews>> get1hHot() {
+		List<HotNews> cacheTop10 = hotNewsCacheService.getHourCacheTop10();
+		return Result.success(cacheTop10);
 	}
 
-	// 查询24小时缓存热点
-	@GetMapping("/hot/24h")
-	public Result<String> get24hHot() {
-		String json = getCachedHotArticles(RedisConstant.HOT_NEWS_24HOUR_CACHE_TOP10);
-		return Result.success(json);
+	// 查询24小时缓存热点top10
+	@GetMapping("/hot/24h/top10")
+	public Result<List<HotNews>> get24hHot() {
+		List<HotNews> cacheTop10 = hotNewsCacheService.get24HourCacheTop10();
+		return Result.success(cacheTop10);
 	}
 
-	// 查询7天缓存热点
-	@GetMapping("/hot/7d")
-	public Result<String> get7dHot() {
-		String json = getCachedHotArticles(RedisConstant.HOT_NEWS_WEEK_CACHE_TOP10);
-		return Result.success(json);
+	// 查询7天缓存热点top10
+	@GetMapping("/hot/7d/top10")
+	public Result<List<HotNews>> get7dHot() {
+		List<HotNews> cacheTop10 = hotNewsCacheService.getWeekCacheTop10();
+		return Result.success(cacheTop10);
 	}
 
-	private List<Map<Object, Object>> getHotNews(String key, int limit) {
-		Set<ZSetOperations.TypedTuple<Object>> tuples = redisUtil.zRangeWithScores(key, 0, limit - 1);
-		return tuples.stream().map(t -> {
-			long newsId = (long) t.getValue();
-			return redisUtil.hmget(RedisConstant.NEWS_METRICS_PREFIX + newsId);
-		}).toList();
-	}
-
-	private String getCachedHotArticles(String cacheKey) {
-		String json = (String) redisUtil.get(cacheKey);
-		if (json == null) return "[]";
-		return json;
+	// 随机推荐新闻列表
+	@GetMapping("/recommend")
+	public CompletableFuture<Result<List<NewsVo>>> recommend(@RequestParam(name = "size", defaultValue = "10")
+															 @Max(value = 50, message = "size不能大于50")
+															 Integer size) {
+		// 必须在主线程获取用户ID（异步方法无法访问ThreadLocal）
+		long userId = WebContextUtil.getCurrentUserId();
+		return hotNewsCacheService.getRecommendsAsync(size, userId)
+				.thenApply(result -> {
+					log.info("Successfully generated {} recommendations", result.size());
+					return Result.success(result);
+				})
+				.exceptionally(ex -> {
+					log.error("Recommendation failed for user {}", userId, ex);
+					return Result.fail(ReturnCode.RC500.getCode(), "系统出错：推荐新闻列表功能不可用", null);
+				});
 	}
 }

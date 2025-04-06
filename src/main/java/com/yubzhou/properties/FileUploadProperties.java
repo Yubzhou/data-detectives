@@ -8,12 +8,14 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "file-upload")
 public class FileUploadProperties {
 
-	private Image image;
+	private MyFileType image;
+	private MyFileType json;
+
 
 	@Data
 	@NoArgsConstructor
 	@AllArgsConstructor
-	public static class Image {
+	public static class MyFileType {
 		private String uploadDir;
 		private String accessUrl;
 	}

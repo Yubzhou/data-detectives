@@ -13,8 +13,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-@Slf4j
+
 @Component
+@Slf4j
 public class RedisUtil {
 	private final RedisTemplate<String, Object> redisTemplate;
 	private final ObjectMapper mapper;
@@ -62,7 +63,7 @@ public class RedisUtil {
 	 * 获取键的剩余过期时间
 	 *
 	 * @param key 键名
-	 * @return 剩余时间（秒），键不存在返回 -2，永久键返回 -1
+	 * @return 整数：剩余时间（秒）；-1：键存在，但未设置过期时间；-2：键不存在；
 	 */
 	public long getExpire(String key) {
 		return redisTemplate.getExpire(key, TimeUnit.SECONDS);
@@ -391,6 +392,22 @@ public class RedisUtil {
 		} catch (Exception e) {
 			log.error("Redis sHasKey error, key: {}", key, e);
 			return false;
+		}
+	}
+
+	/**
+	 * 判断集合中是否包含指定值
+	 *
+	 * @param key    键名
+	 * @param values 可变参数，值列表
+	 * @return 成员集合，键不存在返回空集合
+	 */
+	public Map<Object, Boolean> sHasKeys(String key, Object... values) {
+		try {
+			return redisTemplate.opsForSet().isMember(key, values);
+		} catch (Exception e) {
+			log.error("Redis sHasKeys error, key: {}", key, e);
+			return null;
 		}
 	}
 
@@ -821,6 +838,4 @@ public class RedisUtil {
 			return 0;
 		}
 	}
-
-	// ============================= pipeline ============================
 }

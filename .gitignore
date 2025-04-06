@@ -47,3 +47,6 @@ build/
 *.zip
 *.tar.gz
 *.rar
+
+### 自定义数据文件 ###
+src/main/resources/data/

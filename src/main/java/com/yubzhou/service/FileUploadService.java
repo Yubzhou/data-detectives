@@ -14,12 +14,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 public interface FileUploadService {
 	CompletableFuture<UploadResult> uploadImage(MultipartFile[] files, Set<MediaType> allowedTypes);
 
 	CompletableFuture<UploadResult> uploadImages(MultipartFile[] files, Set<MediaType> allowedTypes);
+
+	CompletableFuture<UploadResult> uploadJson(MultipartFile[] files, Set<MediaType> allowedTypes);
 
 	// 定义统一返回结构
 	@Data
