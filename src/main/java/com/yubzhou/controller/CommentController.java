@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.yubzhou.common.Result;
 import com.yubzhou.model.dto.CreateCommentDto;
 import com.yubzhou.model.dto.QueryCommentDto;
-import com.yubzhou.model.po.Comment;
+import com.yubzhou.model.vo.CommentVo;
 import com.yubzhou.service.CommentService;
 import com.yubzhou.util.WebContextUtil;
 import jakarta.validation.Valid;
@@ -25,19 +25,19 @@ public class CommentController {
 
 	// 用户中心-我的评论列表
 	@PostMapping("/user")
-	public Result<IPage<Comment>> listUserComments(@Valid @RequestBody QueryCommentDto queryDto) {
+	public Result<IPage<CommentVo>> listUserComments(@Valid @RequestBody QueryCommentDto queryDto) {
 		long userId = WebContextUtil.getCurrentUserId();
-		IPage<Comment> comments = commentService.listUserComments(userId, queryDto);
-		return Result.success(comments);
+		IPage<CommentVo> commentVos = commentService.listUserComments(userId, queryDto);
+		return Result.success(commentVos);
 	}
 
 	// 新闻详情页-评论列表
 	@PostMapping("/news/{newsId:[1-9]\\d*}")
-	public Result<IPage<Comment>> listNewsComments(@PathVariable("newsId") Long newsId,
+	public Result<IPage<CommentVo>> listNewsComments(@PathVariable("newsId") Long newsId,
 												   @Valid @RequestBody QueryCommentDto queryDto) {
 		long userId = WebContextUtil.getCurrentUserId();
-		IPage<Comment> comments = commentService.listNewsComments(newsId, userId, queryDto);
-		return Result.success(comments);
+		IPage<CommentVo> commentVos = commentService.listNewsComments(newsId, userId, queryDto);
+		return Result.success(commentVos);
 	}
 
 	// 发表评论

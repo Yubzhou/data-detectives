@@ -13,6 +13,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RegisterUserProfileDto {
+
 	@Length(min = 2, max = 15, message = "昵称长度必须在2-15之间")
 	private String nickname; // 昵称
 

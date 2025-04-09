@@ -126,7 +126,7 @@ public class HotNewsService {
 
 	// 获取用户对某些新闻列表的操作（比如格式为新闻ID：true）
 	public Map<String, Map<Object, Boolean>> getUserNewsAction(List<News> newsList, long userId) {
-		if (CollectionUtils.isEmpty(newsList)) return null;
+		if (CollectionUtils.isEmpty(newsList)) return Collections.emptyMap();
 
 		// 获取到新闻ID列表
 		Object[] newsIds = newsList.stream().map(News::getId).toArray();
@@ -135,7 +135,7 @@ public class HotNewsService {
 
 	// 获取用户对某些新闻列表的操作（比如格式为新闻ID：true）
 	public Map<String, Map<Object, Boolean>> getUserNewsAction(Object[] newsIds, long userId) {
-		if (newsIds == null || newsIds.length == 0) return null;
+		if (newsIds == null || newsIds.length == 0) return Collections.emptyMap();
 
 		String userKeyPrefix = RedisConstant.USER_NEWS_ACTION_PREFIX + userId + ":";
 

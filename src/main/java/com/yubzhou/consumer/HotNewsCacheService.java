@@ -3,7 +3,7 @@ package com.yubzhou.consumer;
 import com.yubzhou.common.HotNewsActionTracker;
 import com.yubzhou.common.RedisConstant;
 import com.yubzhou.model.po.News;
-import com.yubzhou.model.pojo.HotNews;
+import com.yubzhou.model.vo.HotNews;
 import com.yubzhou.model.vo.NewsVo;
 import com.yubzhou.service.NewsCategoryRelationService;
 import com.yubzhou.service.NewsService;
@@ -297,25 +297,6 @@ public class HotNewsCacheService {
 				.toList();
 	}
 
-	public List<NewsVo> getRecommends(Integer size, long userId, long categoryId) {
-		try {
-			String zSetKey = RedisConstant.HOT_NEWS_WEEK; // 从七天热点新闻中推荐新闻
-			String setKey = RedisConstant.NEWS_RECOMMEND_PREFIX + userId; // 存储用户已被推荐的新闻ID
-
-			// 获取到随机推荐的新闻ID（内部会自动维护用户的已推荐新闻ID集合）
-			List<Long> newsIds = redisZSetUtil.getRandomZSetLongs(zSetKey, setKey, categoryId, size);
-
-			if (!CollectionUtils.isEmpty(newsIds)) {
-				return buildFromCache(newsIds, userId);
-			} else {
-				return buildFromDB(size, userId, categoryId);
-			}
-		} catch (Exception e) {
-			log.error("推荐新闻列表出错");
-			return null;
-		}
-	}
-
 	/**
 	 * 异步获取推荐新闻
 	 *
@@ -332,14 +313,18 @@ public class HotNewsCacheService {
 			// 获取到随机推荐的新闻ID（内部会自动维护用户的已推荐新闻ID集合）
 			List<Long> newsIds = redisZSetUtil.getRandomZSetLongs(zSetKey, setKey, categoryId, size);
 
-			List<NewsVo> result;
+			List<News> newsList;
 			if (!CollectionUtils.isEmpty(newsIds)) {
-				result = buildFromCache(newsIds, userId);
+				newsList = buildFromCache(newsIds, userId);
 			} else {
-				result = buildFromDB(size, userId, categoryId);
+				newsList = buildFromDB(size, userId, categoryId);
+				// 更新新闻ID集合
+				newsIds = newsList.stream().map(News::getId).toList();
 			}
+			// 添加用户新闻操作
+			List<NewsVo> result = addUserNewsActions(newsIds, newsList, userId);
 			// 添加新闻分类标签
-			addCategories(result);
+			addCategories(newsIds, result);
 			return CompletableFuture.completedFuture(result);
 		} catch (Exception e) {
 			log.error("Async recommendation failed for user {}", userId, e);
@@ -347,10 +332,15 @@ public class HotNewsCacheService {
 		}
 	}
 
-	private void addCategories(List<NewsVo> newsVoList) {
-		List<Long> newsIds = newsVoList.stream()
-				.map(newsVo -> newsVo.getNews().getId())
+	public List<NewsVo> addUserNewsActions(List<Long> newsIds, List<News> newsList, long userId) {
+		// 获取用户对新闻的操作（比如格式为新闻ID：true）
+		Map<String, Map<Object, Boolean>> actionMap = hotNewsService.getUserNewsAction(newsIds.toArray(), userId);
+		return newsList.stream()
+				.map(news -> new NewsVo(news, NewsVo.UserNewsAction.of(actionMap, news.getId())))
 				.toList();
+	}
+
+	public void addCategories(List<Long> newsIds, List<NewsVo> newsVoList) {
 		Map<Long, List<String>> newsCategoryRelationMap = newsCategoryRelationService.getNewsCategoryRelationMap(newsIds);
 		for (NewsVo newsVo : newsVoList) {
 			List<String> categories = newsCategoryRelationMap.get(newsVo.getNews().getId());
@@ -358,21 +348,18 @@ public class HotNewsCacheService {
 		}
 	}
 
-	private List<NewsVo> buildFromCache(List<Long> newsIds, long userId) {
+	private List<News> buildFromCache(List<Long> newsIds, long userId) {
 		// 获取用户对新闻的操作（比如格式为新闻ID：true）
 		Map<String, Map<Object, Boolean>> actionMap = hotNewsService.getUserNewsAction(newsIds.toArray(), userId);
 		return newsIds.stream()
 				.map(hotNewsService::getNews)
 				.filter(Objects::nonNull)
-				.map(news -> new NewsVo(news, NewsVo.UserNewsAction.of(actionMap, news.getId())))
 				.toList();
 	}
 
-	private List<NewsVo> buildFromDB(int size, long userId, long categoryId) {
+	private List<News> buildFromDB(int size, long userId, long categoryId) {
 		// 从数据库中获取随机新闻（内部会自动维护用户的已推荐新闻ID集合）
 		List<News> newsList = newsService.getRecommends(size, userId, categoryId);
-		// 获取用户对新闻的操作（比如格式为新闻ID：true）
-		Map<String, Map<Object, Boolean>> actionMap = hotNewsService.getUserNewsAction(newsList, userId);
 
 		// 异步缓存并处理异常
 		CompletableFuture.runAsync(() -> {
@@ -383,9 +370,7 @@ public class HotNewsCacheService {
 			}
 		}, globalTaskExecutor);
 
-		return newsList.stream()
-				.map(news -> new NewsVo(news, NewsVo.UserNewsAction.of(actionMap, news.getId())))
-				.toList();
+		return newsList;
 	}
 
 	// 缓存类型：1小时、24小时、7天

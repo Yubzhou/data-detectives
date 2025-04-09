@@ -5,11 +5,12 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.yubzhou.model.dto.CreateCommentDto;
 import com.yubzhou.model.dto.QueryCommentDto;
 import com.yubzhou.model.po.Comment;
+import com.yubzhou.model.vo.CommentVo;
 
 public interface CommentService extends IService<Comment> {
-	IPage<Comment> listUserComments(Long userId, QueryCommentDto queryDto);
+	IPage<CommentVo> listUserComments(Long userId, QueryCommentDto queryDto);
 
-	IPage<Comment> listNewsComments(Long newsId, Long userId, QueryCommentDto queryDto);
+	IPage<CommentVo> listNewsComments(Long newsId, Long userId, QueryCommentDto queryDto);
 
 	boolean createComment(Long userId, Long newsId, CreateCommentDto createDto);
 

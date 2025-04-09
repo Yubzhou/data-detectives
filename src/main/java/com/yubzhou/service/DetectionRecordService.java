@@ -9,8 +9,6 @@ import java.util.List;
 
 public interface DetectionRecordService extends IService<DetectionRecord> {
 
-	boolean createDetectionRecord(final long userId, List<CreateDetectionRecordDto> dtoList);
-
 	IPage<DetectionRecord> queryByUnionIndex(
 			Long userId,
 			Integer days,

@@ -29,6 +29,8 @@ public class DetectionRecord {
 
 	private Integer detectionType; // 检测类型（0: 高效率模式，1: 高精度模式）
 
+	private String newsCategory; // 新闻分类（可选）
+
 	private Boolean favorite; // 收藏状态（false：未收藏，true：已收藏）
 
 	@JsonFormat(pattern = DateTimeUtil.LOCAL_DATE_TIME_NO_MILLIS_FORMAT)

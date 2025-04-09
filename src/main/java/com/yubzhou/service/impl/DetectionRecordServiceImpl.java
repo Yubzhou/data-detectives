@@ -6,24 +6,21 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.yubzhou.mapper.DetectionRecordMapper;
-import com.yubzhou.model.dto.CreateDetectionRecordDto;
 import com.yubzhou.model.po.DetectionRecord;
 import com.yubzhou.service.DetectionRecordService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class DetectionRecordServiceImpl
 		extends ServiceImpl<DetectionRecordMapper, DetectionRecord>
 		implements DetectionRecordService {
 
-	@Override
-	public boolean createDetectionRecord(final long userId, List<CreateDetectionRecordDto> dtoList) {
-		List<DetectionRecord> records = dtoList.stream().map(dto -> dto.toEntity(userId)).toList();
-		return saveBatch(records, DEFAULT_BATCH_SIZE);
-	}
+	private final TransactionTemplate transactionTemplate;
 
 	/**
 	 * 根据用户ID、时间范围、检测类型和检测结论筛选记录（分页）

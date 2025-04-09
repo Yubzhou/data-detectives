@@ -1,4 +1,4 @@
-package com.yubzhou.model.pojo;
+package com.yubzhou.model.vo;
 
 import com.yubzhou.model.po.News;
 import lombok.AllArgsConstructor;

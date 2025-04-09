@@ -44,6 +44,9 @@ public class CreateDetectionRecordDto {
 	@Max(value = 1, message = "检测类型只能是0或1")
 	private Integer detectionType;
 
+	@Size(max = 25, message = "新闻类别长度不能超过25字符")
+	private String newsCategory; // 新闻类别（可选，最大25字符）
+
 	public DetectionRecord toEntity(long userId) {
 		DetectionRecord detectionRecord = new DetectionRecord();
 		detectionRecord.setUserId(userId);
@@ -53,6 +56,7 @@ public class CreateDetectionRecordDto {
 		detectionRecord.setTextAnalysis(this.textAnalysis);
 		detectionRecord.setCommonSenseAnalysis(this.commonSenseAnalysis);
 		detectionRecord.setDetectionType(this.detectionType);
+		detectionRecord.setNewsCategory(this.newsCategory);
 		return detectionRecord;
 	}
 }

@@ -55,6 +55,12 @@ public class NewsServiceImpl extends ServiceImpl<NewsMapper, News> implements Ne
 				.list();
 	}
 
+	// 根据关键字搜索新闻，带相关性排序（依据新闻标题的全文索引）
+	@Override
+	public List<News> searchNewsWithRelevance(String keyword, int limit) {
+		return this.baseMapper.fulltextSearchWithRelevance(keyword, limit);
+	}
+
 	@Override
 	public boolean updateMetricsWithVersion(News news) {
 		if (news.getId() == null) return false;
@@ -216,45 +222,6 @@ public class NewsServiceImpl extends ServiceImpl<NewsMapper, News> implements Ne
 		}
 		return candidateIds;
 	}
-
-
-	// // 从数据库中随机获取新闻（内部会自动维护用户已推荐的新闻ID集合）
-	// private List<News> getRandomNews(String setKey, int size, MinAndMaxId minMax, Set<Long> excludeIds) {
-	// 	// 生成随机ID列表
-	// 	Set<Long> candidateIds = new HashSet<>();
-	// 	int limit = (int) Math.ceil(size * 1.5);
-	// 	while (candidateIds.size() < limit) { // 确保生成的ID数量足够
-	// 		long randomId = random.nextLong(minMax.getMinId(), minMax.getMaxId() + 1);
-	// 		if (excludeIds.contains(randomId)) continue; // 排除已推荐的新闻
-	// 		candidateIds.add(randomId);
-	// 	}
-	//
-	// 	// 转换为List并截取前size个
-	// 	List<Long> idsList = new ArrayList<>(candidateIds);
-	// 	// 查询数据库（只会返回数据库中已存在的新闻）
-	// 	List<News> newsList = this.listByIds(idsList.subList(0, size));
-	//
-	// 	List<News> moreNews = new ArrayList<>(0); // 初始化为空集合
-	// 	// 如果查询到的数量小于等于需要获取数量的一半，则查询剩余0.5*size的新闻
-	// 	if (newsList.size() <= size / 2) {
-	// 		moreNews = this.listByIds(idsList.subList(size, idsList.size()));
-	// 	}
-	//
-	// 	List<News> finalNews = Stream.concat(newsList.stream(), moreNews.stream()).toList();
-	//
-	// 	// 维护用户的已推荐新闻的Redis集合
-	// 	if (redisUtil.getExpire(setKey) == -1L) {
-	// 		// 只有键存在且未设置过期时间，才设置过期时间
-	// 		redisUtil.sSet(
-	// 				setKey,
-	// 				RedisConstant.NEWS_RECOMMEND_EXPIRE_TIME,
-	// 				finalNews.stream().map(News::getId).toArray()
-	// 		);
-	// 	}
-	//
-	// 	// 将两次查询的新闻合并
-	// 	return finalNews;
-	// }
 
 	// 策略判断逻辑抽取
 	private boolean shouldUseForceMode(int excludeSize, int requestSize, long total) {

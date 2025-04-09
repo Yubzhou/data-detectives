@@ -16,6 +16,8 @@ import lombok.NonNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 
 @Service
@@ -27,6 +29,9 @@ public class UserProfileServiceImpl extends ServiceImpl<UserProfileMapper, UserP
 	public UserProfileServiceImpl(UserService userService) {
 		this.userService = userService;
 	}
+
+	// 随机生成一个可重复的昵称（字母+数字）
+	// Yubzhou TODO 2025/4/9 22:37; 此处需要优化，随机生成一个可重复的昵称（字母+数字）
 
 	@Override
 	public void insertUserProfile(Long userId) {
@@ -52,6 +57,14 @@ public class UserProfileServiceImpl extends ServiceImpl<UserProfileMapper, UserP
 		User user = userService.findByUserId(userId);
 		// 转为Vo对象并返回
 		return UserProfileVo.fromUserProfile(profile, user.getPhone(), user.getCreatedAt());
+	}
+
+	@Override
+	public List<UserProfile> listUserProfiles(Collection<Long> userIds) {
+		return this.lambdaQuery()
+				.select(UserProfile::getUserId, UserProfile::getNickname, UserProfile::getAvatarUrl)
+				.in(UserProfile::getUserId, userIds)
+				.list();
 	}
 
 	@Override

@@ -23,6 +23,8 @@ public interface NewsService extends IService<News> {
 
 	CompletableFuture<List<News>> getRecommendsAsync(int size, Long userId, long categoryId);
 
+	List<News> searchNewsWithRelevance(String keyword, int limit);
+
 	// 存储新闻的最小ID和最大ID
 	@Data
 	@NoArgsConstructor
