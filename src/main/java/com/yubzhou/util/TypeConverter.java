@@ -17,7 +17,9 @@ public class TypeConverter {
 	private static void registerDefaultConverters() {
 		CONVERTERS.put(Long.class, Long::parseLong);
 		CONVERTERS.put(Integer.class, Integer::parseInt);
+		CONVERTERS.put(Short.class, Short::parseShort);
 		CONVERTERS.put(Double.class, Double::parseDouble);
+		CONVERTERS.put(Float.class, Float::parseFloat);
 		CONVERTERS.put(String.class, s -> s);
 		CONVERTERS.put(Boolean.class, Boolean::parseBoolean);
 		// 添加更多基础类型...
@@ -74,5 +76,40 @@ public class TypeConverter {
 		} catch (Exception e) {
 			return null; // 转换失败返回null，后续会被过滤
 		}
+	}
+
+	/**
+	 * Map类型转换
+	 *
+	 * @param source     源Map
+	 * @param keyType    键的目标类型
+	 * @param valueType  值的目标类型
+	 * @param mapFactory 目标Map工厂（如：HashMap::new）
+	 * @param <K>        键的目标类型
+	 * @param <V>        值的目标类型
+	 * @param <M>        目标Map类型
+	 * @return 转换后的Map
+	 */
+	public static <K, V, M extends Map<K, V>> M convertMap(Map<?, ?> source,
+														   Class<K> keyType,
+														   Class<V> valueType,
+														   Supplier<M> mapFactory) {
+		Function<String, K> keyConverter = getConverter(keyType);
+		Function<String, V> valueConverter = getConverter(valueType);
+
+		return source.entrySet().stream()
+				.map(entry -> {
+					K convertedKey = safeConvert(entry.getKey(), keyConverter);
+					V convertedValue = safeConvert(entry.getValue(), valueConverter);
+					return convertedKey != null && convertedValue != null ?
+							new AbstractMap.SimpleEntry<>(convertedKey, convertedValue) : null;
+				})
+				.filter(Objects::nonNull)
+				.collect(Collectors.toMap(
+						Map.Entry::getKey,
+						Map.Entry::getValue,
+						(oldVal, newVal) -> newVal,
+						mapFactory
+				));
 	}
 }

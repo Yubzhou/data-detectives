@@ -31,15 +31,15 @@ CREATE TABLE IF NOT EXISTS `user_profiles`
 CREATE TABLE IF NOT EXISTS detection_records
 (
     id                    BIGINT UNSIGNED AUTO_INCREMENT COMMENT '检测ID',
-    user_id               BIGINT UNSIGNED     NOT NULL COMMENT '用户ID',
-    content               TEXT                NOT NULL COMMENT '检测内容',
-    detection_result      TINYINT(1) UNSIGNED NOT NULL COMMENT '检测结论（0：虚假，1：真实）',
-    reliability           DECIMAL(4, 1)       NOT NULL COMMENT '可信度（直接存去除百分号%的数，即89%直接存89）',
-    text_analysis         TEXT                NOT NULL COMMENT '文本描述分析结果',
-    common_sense_analysis TEXT                NOT NULL COMMENT '常识推理分析结果',
-    detection_type        TINYINT(1) UNSIGNED NOT NULL COMMENT '检测类型（0: 高效率模式，1: 高精度模式）',
-    favorite              TINYINT(1) UNSIGNED NOT NULL DEFAULT 0 COMMENT '收藏状态（0:未收藏，1:已收藏）',
-    created_at            DATETIME            NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '检测时间',
+    user_id               BIGINT UNSIGNED  NOT NULL COMMENT '用户ID',
+    content               TEXT             NOT NULL COMMENT '检测内容',
+    detection_result      TINYINT UNSIGNED NOT NULL COMMENT '检测结论（0：虚假，1：真实）',
+    reliability           DECIMAL(4, 1)    NOT NULL COMMENT '可信度（直接存去除百分号%的数，即89%直接存89）',
+    text_analysis         TEXT             NOT NULL COMMENT '文本描述分析结果',
+    common_sense_analysis TEXT             NOT NULL COMMENT '常识推理分析结果',
+    detection_type        TINYINT UNSIGNED NOT NULL COMMENT '检测类型（0: 高效率模式，1: 高精度模式）',
+    favorite              TINYINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '收藏状态（0:未收藏，1:已收藏）',
+    created_at            DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '检测时间',
     PRIMARY KEY (id),
     INDEX idx_user_time_type_result (user_id, created_at, detection_type, detection_result) COMMENT '用户id+时间+检测类型+检测结论联合索引'
 ) COMMENT ='检测记录表';
@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS news
     created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     updated_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (id),
-    INDEX idx_time (created_at DESC),
+    INDEX idx_time_desc (created_at DESC),
     FULLTEXT INDEX ft_title (title) WITH PARSER ngram -- 启用ngram分词
 ) COMMENT '新闻表';
 
@@ -93,13 +93,17 @@ CREATE TABLE IF NOT EXISTS comments
     id         BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY COMMENT '评论ID',
     user_id    BIGINT UNSIGNED NOT NULL COMMENT '用户ID',
     news_id    BIGINT UNSIGNED NOT NULL COMMENT '新闻ID',
-    content    VARCHAR(500)    NOT NULL COMMENT '评论内容（最大长度500）',
+    comment    VARCHAR(500)    NOT NULL COMMENT '评论内容（最大长度500）',
     likes      INT UNSIGNED DEFAULT 0 COMMENT '点赞数',
-    dislikes   INT UNSIGNED DEFAULT 0 COMMENT '点踩数',
     created_at DATETIME     DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    INDEX idx_user (user_id),
-    INDEX idx_news (news_id),
-    INDEX idx_time (created_at DESC)
+    -- 用户中心我的评论里面按时间排序
+    INDEX idx_user_created_desc (user_id, created_at DESC),
+    -- 用户中心我的评论里面按点赞排序
+    INDEX idx_user_likes_desc (user_id, likes DESC),
+    -- 新闻详情页评论列表按时间排序
+    INDEX idx_news_created_desc (news_id, created_at DESC),
+    -- 新闻详情页评论列表按点赞排序
+    INDEX idx_news_likes_desc (news_id, likes DESC)
 ) COMMENT '评论表';
 
 -- 用户-新闻关联表（多对多关系）

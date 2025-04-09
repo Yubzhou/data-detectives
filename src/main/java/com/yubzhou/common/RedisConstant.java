@@ -75,7 +75,11 @@ public class RedisConstant {
 	// 更新用户新闻行为记录（即用户对某一新闻是否进行了支持、反对、收藏等操作，以及取消支持、取消反对、取消收藏等操作）
 	public static final String USER_NEWS_ACTION_PREFIX = "news:user_action:";
 
+	// 记录用户对某一评论是否点赞过
+	public static final String USER_COMMENT_LIKE_PREFIX = "news:comment:like:";
+	public static final long USER_COMMENT_LIKE_EXPIRE_TIME = 3 * 60 * 60; // 3小时
+
 	// 推荐新闻的前缀
 	public static final String NEWS_RECOMMEND_PREFIX = "news:recommend:";
-	public static final long NEWS_RECOMMEND_EXPIRE_TIME = 3 * 60 * 60; // 3小时
+	public static final long NEWS_RECOMMEND_EXPIRE_TIME = 2 * 60 * 60; // 2小时
 }

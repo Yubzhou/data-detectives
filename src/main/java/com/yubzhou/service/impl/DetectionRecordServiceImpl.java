@@ -12,6 +12,7 @@ import com.yubzhou.service.DetectionRecordService;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class DetectionRecordServiceImpl
@@ -19,10 +20,9 @@ public class DetectionRecordServiceImpl
 		implements DetectionRecordService {
 
 	@Override
-	public boolean createDetectionRecord(long userId, CreateDetectionRecordDto dto) {
-		DetectionRecord detectionRecord = dto.toEntity();
-		detectionRecord.setUserId(userId);
-		return save(detectionRecord);
+	public boolean createDetectionRecord(final long userId, List<CreateDetectionRecordDto> dtoList) {
+		List<DetectionRecord> records = dtoList.stream().map(dto -> dto.toEntity(userId)).toList();
+		return saveBatch(records, DEFAULT_BATCH_SIZE);
 	}
 
 	/**
@@ -44,6 +44,9 @@ public class DetectionRecordServiceImpl
 			Boolean detectionResult,
 			Integer pageNum,
 			Integer pageSize) {
+
+		pageNum = pageNum == null ? 1 : pageNum;
+		pageSize = pageSize == null ? 10 : pageSize;
 
 		LocalDateTime endTime = null, startTime = null;
 

@@ -70,9 +70,9 @@ spring:
           db-type: mysql  # 数据库类型
           config:
             multi-statement-allow: true  # 允许多条语句
-            delete-allow: false  # 禁止删除语句
+            delete-allow: true  # 允许删除语句
             drop-table-allow: false  # 禁止删除表
-            # create-table-allow: true  # 允许创建表
+            create-table-allow: false  # 禁止创建表
         config:
           enabled: true  # 启用配置过滤器
         slf4j:

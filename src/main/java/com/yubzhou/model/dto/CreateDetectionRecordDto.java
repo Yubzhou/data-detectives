@@ -44,8 +44,9 @@ public class CreateDetectionRecordDto {
 	@Max(value = 1, message = "检测类型只能是0或1")
 	private Integer detectionType;
 
-	public DetectionRecord toEntity() {
+	public DetectionRecord toEntity(long userId) {
 		DetectionRecord detectionRecord = new DetectionRecord();
+		detectionRecord.setUserId(userId);
 		detectionRecord.setContent(this.content);
 		detectionRecord.setDetectionResult(this.detectionResult);
 		detectionRecord.setReliability(this.reliability);
