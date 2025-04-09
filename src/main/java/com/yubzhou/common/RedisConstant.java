@@ -41,8 +41,17 @@ public class RedisConstant {
 	// 新闻锁前缀
 	public static final String NEWS_LOCK_PREFIX = "news:lock:";
 
+	// 新闻分类锁前缀
+	public static final String NEWS_CATEGORY_LOCK_PREFIX = "news:category:lock:";
+
 	// 新闻详情的前缀
 	public static final String NEWS_DETAIL_PREFIX = "news:detail:";
+
+	// 新闻分类信息前缀
+	public static final String NEWS_CATEGORY_META = "news:category:meta";
+
+	// 新闻-分类关联
+	public static final String NEWS_CATEGORY_SET_PREFIX = "news:category:set:";
 
 	// 保存每1小时热点新闻
 	public static final String HOT_NEWS_HOUR_PREFIX = "news:hot:1h:";

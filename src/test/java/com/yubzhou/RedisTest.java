@@ -461,5 +461,17 @@ public class RedisTest {
 		}
 	}
 
+	@Test
+	public void test15() throws Exception {
+		// hash存储field和value都为整数的测试案例
+		Map<String, String> map = Map.of("1", "2", "3", "4");
+
+		redisTemplate.opsForHash().putAll("hash", map);
+
+		Map hash = redisTemplate.opsForHash().entries("hash");
+		log.info("hash: {}; type: {}", hash, hash.getClass());
+		// log.info("hash: {}; type: {}", ((Map<?, ?>) hash).get(1), ((Map<?, ?>) hash).get(1).getClass());
+	}
+
 
 }

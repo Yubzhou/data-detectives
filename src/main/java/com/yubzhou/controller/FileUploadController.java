@@ -1,5 +1,6 @@
 package com.yubzhou.controller;
 
+import com.yubzhou.annotation.JwtIgnore;
 import com.yubzhou.common.Result;
 import com.yubzhou.service.FileUploadService;
 import com.yubzhou.service.FileUploadService.UploadResult;
@@ -55,6 +56,7 @@ public class FileUploadController {
 
 	// 上传JSON文件（同步）
 	@PostMapping("/json")
+	@JwtIgnore // 忽略JWT校验
 	public CompletableFuture<Result<?>> handleJsonUpload(@RequestParam("json")
 														 @Size(min = 1, max = 1, message = "仅支持单个文件上传")
 														 MultipartFile[] files) {

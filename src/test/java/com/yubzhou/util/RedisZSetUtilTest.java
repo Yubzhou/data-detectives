@@ -75,6 +75,7 @@ class RedisZSetUtilTest {
 		List<String> result = redisZSetUtil.getRandomZSetStrings(
 				"testZSetString",
 				"excludeSetString",
+				1L,
 				10
 		);
 		long endTime = System.currentTimeMillis();
@@ -90,6 +91,7 @@ class RedisZSetUtilTest {
 		List<Long> result = redisZSetUtil.getRandomZSetLongs(
 				"testZSetLong",
 				"excludeSetLong",
+				1L,
 				10
 		);
 		long endTime = System.currentTimeMillis();

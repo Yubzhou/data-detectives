@@ -30,19 +30,18 @@ CREATE TABLE IF NOT EXISTS `user_profiles`
 -- 检测记录表（带复合索引）
 CREATE TABLE IF NOT EXISTS detection_records
 (
-    id               BIGINT UNSIGNED AUTO_INCREMENT COMMENT '检测ID',
-    user_id          BIGINT UNSIGNED                 NOT NULL COMMENT '用户ID',
-    title            VARCHAR(255)                    NOT NULL COMMENT '检测标题',
-    content          TEXT                            NOT NULL COMMENT '检测内容',
-    source_url       VARCHAR(512)                    NULL COMMENT '原文链接',
-    detection_result ENUM ('真实','部分真实','虚假') NOT NULL COMMENT '检测结论',
-    result_details   TEXT                            NOT NULL COMMENT '详细分析',
-    accuracy         DECIMAL(5, 2)                   NOT NULL COMMENT '准确率',
-    created_at       DATETIME                        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '检测时间',
-    is_favorite      TINYINT UNSIGNED                NOT NULL DEFAULT 0 COMMENT '收藏状态（0:未收藏，1:已收藏）',
+    id                    BIGINT UNSIGNED AUTO_INCREMENT COMMENT '检测ID',
+    user_id               BIGINT UNSIGNED     NOT NULL COMMENT '用户ID',
+    content               TEXT                NOT NULL COMMENT '检测内容',
+    detection_result      TINYINT(1) UNSIGNED NOT NULL COMMENT '检测结论（0：虚假，1：真实）',
+    reliability           DECIMAL(4, 1)       NOT NULL COMMENT '可信度（直接存去除百分号%的数，即89%直接存89）',
+    text_analysis         TEXT                NOT NULL COMMENT '文本描述分析结果',
+    common_sense_analysis TEXT                NOT NULL COMMENT '常识推理分析结果',
+    detection_type        TINYINT(1) UNSIGNED NOT NULL COMMENT '检测类型（0: 高效率模式，1: 高精度模式）',
+    favorite              TINYINT(1) UNSIGNED NOT NULL DEFAULT 0 COMMENT '收藏状态（0:未收藏，1:已收藏）',
+    created_at            DATETIME            NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '检测时间',
     PRIMARY KEY (id),
-    INDEX idx_user_result_time (user_id, created_at, detection_result) USING BTREE COMMENT '用户id+时间+检测结论联合索引'
-    # FULLTEXT INDEX idx_content_search (title, content) COMMENT '全文检索索引'
+    INDEX idx_user_time_type_result (user_id, created_at, detection_type, detection_result) COMMENT '用户id+时间+检测类型+检测结论联合索引'
 ) COMMENT ='检测记录表';
 
 -- 新闻表（存储核心新闻数据）
@@ -51,6 +50,7 @@ CREATE TABLE IF NOT EXISTS news
     id         BIGINT UNSIGNED AUTO_INCREMENT COMMENT '新闻ID',
     title      VARCHAR(200) NOT NULL COMMENT '新闻标题',
     content    TEXT         NOT NULL COMMENT '新闻内容',
+    cover_url  VARCHAR(255) NULL     DEFAULT NULL COMMENT '封面url（只存储相对地址，即不带http://localhost:8080）',
     views      INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '浏览量',
     supports   INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '支持数',
     opposes    INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '反对数',
@@ -60,8 +60,15 @@ CREATE TABLE IF NOT EXISTS news
     created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     updated_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (id),
-    INDEX idx_time (created_at DESC)
+    INDEX idx_time (created_at DESC),
+    FULLTEXT INDEX ft_title (title) WITH PARSER ngram -- 启用ngram分词
 ) COMMENT '新闻表';
+
+-- 为title创建全文索引并且使用ngram全文解析器进行分词
+-- CREATE FULLTEXT INDEX ft_title ON data_detectives.news (title) WITH PARSER `ngram`;
+
+-- 查看全文检索配置
+-- show variables like '%token%';
 
 -- 新闻分类表
 CREATE TABLE IF NOT EXISTS categories
@@ -75,8 +82,8 @@ CREATE TABLE IF NOT EXISTS categories
 -- 新闻-分类关联表（多对多关系）
 CREATE TABLE IF NOT EXISTS news_categories
 (
-    news_id     INT UNSIGNED NOT NULL COMMENT '新闻ID',
-    category_id INT UNSIGNED NOT NULL COMMENT '分类ID',
+    news_id     BIGINT UNSIGNED NOT NULL COMMENT '新闻ID',
+    category_id INT UNSIGNED    NOT NULL COMMENT '分类ID',
     PRIMARY KEY (news_id, category_id)
 ) COMMENT '新闻-分类关联表';
 

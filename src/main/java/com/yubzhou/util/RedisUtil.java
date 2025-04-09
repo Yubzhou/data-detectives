@@ -7,10 +7,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Component;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 
@@ -474,6 +471,22 @@ public class RedisUtil {
 		} catch (Exception e) {
 			log.error("Redis setRemove error, key: {}", key, e);
 			return 0;
+		}
+	}
+
+	/**
+	 * 获取集合中随机指定数量的成员
+	 *
+	 * @param key  键名
+	 * @param size 获取随机元素的数量
+	 * @return 随机成员集合，键不存在返回空集合
+	 */
+	public Set<Object> sGetRandom(String key, int size) {
+		try {
+			return redisTemplate.opsForSet().distinctRandomMembers(key, size);
+		} catch (Exception e) {
+			log.error("Redis sGetRandom error, key: {}", key, e);
+			return null;
 		}
 	}
 

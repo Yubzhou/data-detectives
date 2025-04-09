@@ -5,6 +5,7 @@ import com.yubzhou.common.RedisConstant;
 import com.yubzhou.model.po.News;
 import com.yubzhou.model.pojo.HotNews;
 import com.yubzhou.model.vo.NewsVo;
+import com.yubzhou.service.NewsCategoryRelationService;
 import com.yubzhou.service.NewsService;
 import com.yubzhou.util.HotNewsUtil;
 import com.yubzhou.util.RedisUtil;
@@ -39,6 +40,7 @@ public class HotNewsCacheService {
 	private final NewsService newsService;
 	private final HotNewsService hotNewsService;
 	private final HotNewsActionTracker hotNewsActionTracker;
+	private final NewsCategoryRelationService newsCategoryRelationService;
 
 	@Autowired
 	public HotNewsCacheService(RedisUtil redisUtil,
@@ -46,13 +48,15 @@ public class HotNewsCacheService {
 							   @Qualifier("globalTaskExecutor") ThreadPoolTaskExecutor globalTaskExecutor,
 							   NewsService newsService,
 							   HotNewsService hotNewsService,
-							   HotNewsActionTracker hotNewsActionTracker) {
+							   HotNewsActionTracker hotNewsActionTracker,
+							   NewsCategoryRelationService newsCategoryRelationService) {
 		this.redisUtil = redisUtil;
 		this.redisZSetUtil = redisZSetUtil;
 		this.globalTaskExecutor = globalTaskExecutor;
 		this.newsService = newsService;
 		this.hotNewsService = hotNewsService;
 		this.hotNewsActionTracker = hotNewsActionTracker;
+		this.newsCategoryRelationService = newsCategoryRelationService;
 	}
 
 	// 使用并发集合
@@ -293,18 +297,18 @@ public class HotNewsCacheService {
 				.toList();
 	}
 
-	public List<NewsVo> getRecommends(Integer size, long userId) {
+	public List<NewsVo> getRecommends(Integer size, long userId, long categoryId) {
 		try {
 			String zSetKey = RedisConstant.HOT_NEWS_WEEK; // 从七天热点新闻中推荐新闻
 			String setKey = RedisConstant.NEWS_RECOMMEND_PREFIX + userId; // 存储用户已被推荐的新闻ID
 
 			// 获取到随机推荐的新闻ID（内部会自动维护用户的已推荐新闻ID集合）
-			List<Long> newsIds = redisZSetUtil.getRandomZSetLongs(zSetKey, setKey, size);
+			List<Long> newsIds = redisZSetUtil.getRandomZSetLongs(zSetKey, setKey, categoryId, size);
 
 			if (!CollectionUtils.isEmpty(newsIds)) {
 				return buildFromCache(newsIds, userId);
 			} else {
-				return buildFromDB(size, userId);
+				return buildFromDB(size, userId, categoryId);
 			}
 		} catch (Exception e) {
 			log.error("推荐新闻列表出错");
@@ -320,31 +324,37 @@ public class HotNewsCacheService {
 	 * @return 异步结果包装
 	 */
 	@Async("globalTaskExecutor")
-	public CompletableFuture<List<NewsVo>> getRecommendsAsync(Integer size, long userId) {
+	public CompletableFuture<List<NewsVo>> getRecommendsAsync(Integer size, long userId, long categoryId) {
 		try {
 			String zSetKey = RedisConstant.HOT_NEWS_WEEK; // 从七天热点新闻中推荐新闻
 			String setKey = RedisConstant.NEWS_RECOMMEND_PREFIX + userId; // 存储用户已被推荐的新闻ID
 
 			// 获取到随机推荐的新闻ID（内部会自动维护用户的已推荐新闻ID集合）
-			List<Long> newsIds = redisZSetUtil.getRandomZSetLongs(zSetKey, setKey, size);
-
-			// if (!CollectionUtils.isEmpty(newsIds)) {
-			// 	return CompletableFuture.supplyAsync(() -> buildFromCache(newsIds, userId), globalTaskExecutor);
-			// } else {
-			// 	return CompletableFuture.supplyAsync(() -> buildFromDB(size, userId), globalTaskExecutor);
-			// }
+			List<Long> newsIds = redisZSetUtil.getRandomZSetLongs(zSetKey, setKey, categoryId, size);
 
 			List<NewsVo> result;
 			if (!CollectionUtils.isEmpty(newsIds)) {
 				result = buildFromCache(newsIds, userId);
 			} else {
-				result = buildFromDB(size, userId);
+				result = buildFromDB(size, userId, categoryId);
 			}
+			// 添加新闻分类标签
+			addCategories(result);
 			return CompletableFuture.completedFuture(result);
-
 		} catch (Exception e) {
 			log.error("Async recommendation failed for user {}", userId, e);
 			return CompletableFuture.failedFuture(e);
+		}
+	}
+
+	private void addCategories(List<NewsVo> newsVoList) {
+		List<Long> newsIds = newsVoList.stream()
+				.map(newsVo -> newsVo.getNews().getId())
+				.toList();
+		Map<Long, List<String>> newsCategoryRelationMap = newsCategoryRelationService.getNewsCategoryRelationMap(newsIds);
+		for (NewsVo newsVo : newsVoList) {
+			List<String> categories = newsCategoryRelationMap.get(newsVo.getNews().getId());
+			newsVo.setCategories(categories);
 		}
 	}
 
@@ -358,9 +368,9 @@ public class HotNewsCacheService {
 				.toList();
 	}
 
-	private List<NewsVo> buildFromDB(int size, long userId) {
+	private List<NewsVo> buildFromDB(int size, long userId, long categoryId) {
 		// 从数据库中获取随机新闻（内部会自动维护用户的已推荐新闻ID集合）
-		List<News> newsList = newsService.getRecommends(size, userId);
+		List<News> newsList = newsService.getRecommends(size, userId, categoryId);
 		// 获取用户对新闻的操作（比如格式为新闻ID：true）
 		Map<String, Map<Object, Boolean>> actionMap = hotNewsService.getUserNewsAction(newsList, userId);
 

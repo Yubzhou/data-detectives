@@ -33,8 +33,9 @@ public class RedisZSetUtil {
 	/**
 	 * 获取随机元素（支持泛型）
 	 *
-	 * @param zSetKey       ZSET类型键名
+	 * @param zSetKey       ZSet类型键名
 	 * @param excludeSetKey 排除集合键名（Set类型）
+	 * @param categoryId    新闻分类ID
 	 * @param count         需要获取的数量
 	 * @param maxAttempts   最大尝试次数
 	 * @param expireSeconds 排除集合的过期时间（秒）
@@ -43,6 +44,7 @@ public class RedisZSetUtil {
 	 */
 	public <T> List<T> getRandomZSetMembers(String zSetKey,
 											String excludeSetKey,
+											long categoryId,
 											int count,
 											int maxAttempts,
 											long expireSeconds,
@@ -52,8 +54,8 @@ public class RedisZSetUtil {
 		try {
 			List<Object> rawResult = redisTemplate.execute(
 					zSetRandomScript,
-					Arrays.asList(zSetKey, excludeSetKey),
-					count, maxAttempts, expireSeconds
+					Arrays.asList(zSetKey, excludeSetKey, RedisConstant.NEWS_CATEGORY_SET_PREFIX + categoryId),
+					categoryId, count, maxAttempts, expireSeconds
 			);
 
 			log.info("Raw result from Lua: {}", rawResult);  // 打印原始结果
@@ -70,19 +72,22 @@ public class RedisZSetUtil {
 	 * 获取随机元素（支持泛型）
 	 * 默认尝试次数为3*count，默认排除集合的过期时间为3小时
 	 *
-	 * @param zSetKey       ZSET类型键名
+	 * @param zSetKey       ZSet类型键名
 	 * @param excludeSetKey 排除集合键名（Set类型）
+	 * @param categoryId    新闻分类ID
 	 * @param count         需要获取的数量
 	 * @param elementType   返回元素类型
 	 * @return 随机元素列表
 	 */
 	public <T> List<T> getRandomZSetMembers(String zSetKey,
 											String excludeSetKey,
+											long categoryId,
 											int count,
 											Class<T> elementType) {
 		return getRandomZSetMembers(
 				zSetKey,
 				excludeSetKey,
+				categoryId,
 				count,
 				3 * count,
 				RedisConstant.NEWS_RECOMMEND_EXPIRE_TIME,
@@ -94,8 +99,9 @@ public class RedisZSetUtil {
 	 */
 	public List<String> getRandomZSetStrings(String zSetKey,
 											 String excludeSetKey,
+											 long categoryId,
 											 int count) {
-		return getRandomZSetMembers(zSetKey, excludeSetKey, count, String.class);
+		return getRandomZSetMembers(zSetKey, excludeSetKey, categoryId, count, String.class);
 	}
 
 	/**
@@ -103,8 +109,9 @@ public class RedisZSetUtil {
 	 */
 	public List<Integer> getRandomZSetIntegers(String zSetKey,
 											   String excludeSetKey,
+											   long categoryId,
 											   int count) {
-		return getRandomZSetMembers(zSetKey, excludeSetKey, count, Integer.class);
+		return getRandomZSetMembers(zSetKey, excludeSetKey, categoryId, count, Integer.class);
 	}
 
 	/**
@@ -112,7 +119,8 @@ public class RedisZSetUtil {
 	 */
 	public List<Long> getRandomZSetLongs(String zSetKey,
 										 String excludeSetKey,
+										 long categoryId,
 										 int count) {
-		return getRandomZSetMembers(zSetKey, excludeSetKey, count, Long.class);
+		return getRandomZSetMembers(zSetKey, excludeSetKey, categoryId, count, Long.class);
 	}
 }

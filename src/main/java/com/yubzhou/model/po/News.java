@@ -25,6 +25,8 @@ public class News {
 
 	private String content; // 新闻内容
 
+	private String coverUrl; // 新闻封面图片URL
+
 	private Integer views; // 浏览量
 
 	private Integer supports; // 支持数
@@ -55,6 +57,7 @@ public class News {
 		map.put("id", this.getId());
 		map.put("title", this.getTitle());
 		map.put("content", this.getContent());
+		map.put("coverUrl", this.getCoverUrl());
 		map.put("views", this.getViews());
 		map.put("supports", this.getSupports());
 		map.put("opposes", this.getOpposes());
@@ -73,6 +76,7 @@ public class News {
 		news.setId(Long.parseLong(map.get("id").toString()));
 		news.setTitle((String) map.get("title"));
 		news.setContent((String) map.get("content"));
+		news.setCoverUrl((String) map.get("coverUrl"));
 		news.setViews((Integer) map.get("views"));
 		news.setSupports((Integer) map.get("supports"));
 		news.setOpposes((Integer) map.get("opposes"));

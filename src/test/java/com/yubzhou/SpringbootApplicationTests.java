@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yubzhou.model.po.News;
 import com.yubzhou.properties.AsyncProperties;
 import com.yubzhou.properties.FileUploadProperties;
-import com.yubzhou.service.NewsService;
 import com.yubzhou.service.UserService;
 import com.yubzhou.service.impl.NewsLoader;
 import com.yubzhou.service.impl.NewsServiceImpl;
@@ -17,7 +16,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import java.util.List;
 import java.util.Map;
 
 @SpringBootTest
@@ -113,14 +111,4 @@ class SpringbootApplicationTests {
 	// 	System.out.println(userIds);
 	// 	System.out.println(userList);
 	// }
-
-	@Test
-	public void testNewsLoader() throws Exception {
-		newsLoader.loadNewsData();
-	}
-
-	@Test
-	public void test07() throws Exception {
-		System.out.println(newsServiceImpl.listByIds(List.of(1L, 2L, 3L)));
-	}
 }

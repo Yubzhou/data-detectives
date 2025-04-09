@@ -6,6 +6,7 @@ import com.yubzhou.common.RedisConstant;
 import com.yubzhou.common.UserActionEvent;
 import com.yubzhou.common.UserActionEvent.ActionType;
 import com.yubzhou.model.po.News;
+import com.yubzhou.service.NewsCategoryRelationService;
 import com.yubzhou.service.NewsService;
 import com.yubzhou.util.*;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +32,7 @@ public class HotNewsService {
 	private final RedisUtil redisUtil;
 	private final RedisLockUtil redisLockUtil;
 	private final NewsService newsService;
+	private final NewsCategoryRelationService newsCategoryRelationService;
 	private final HotNewsActionTracker hotNewsActionTracker;
 	private final ThreadPoolTaskExecutor globalTaskExecutor;
 
@@ -38,12 +40,14 @@ public class HotNewsService {
 						  RedisUtil redisUtil,
 						  RedisLockUtil redisLockUtil,
 						  NewsService newsService,
+						  NewsCategoryRelationService newsCategoryRelationService,
 						  HotNewsActionTracker hotNewsActionTracker,
 						  @Qualifier("globalTaskExecutor") ThreadPoolTaskExecutor globalTaskExecutor) {
 		this.redisTemplate = redisTemplate;
 		this.redisUtil = redisUtil;
 		this.redisLockUtil = redisLockUtil;
 		this.newsService = newsService;
+		this.newsCategoryRelationService = newsCategoryRelationService;
 		this.hotNewsActionTracker = hotNewsActionTracker;
 		this.globalTaskExecutor = globalTaskExecutor;
 	}
@@ -88,8 +92,13 @@ public class HotNewsService {
 					// 查询数据库
 					News news = loadOneFromMySQL(newsId);
 					if (news != null) {
-						// 缓存到Redis中
-						cacheNewsToRedis(news);
+						// 异步缓存到Redis中
+						globalTaskExecutor.execute(() -> {
+							// 缓存新闻详情
+							cacheNewsToRedis(news);
+							// 缓存新闻-分类关系
+							newsCategoryRelationService.cacheNewsCategoryRelationToRedis(newsId);
+						});
 						return news;
 					} else {
 						// 缓存空值防止缓存穿透（查询一个数据库中不存在的数据，导致每次请求都会穿透缓存直接访问数据库。）

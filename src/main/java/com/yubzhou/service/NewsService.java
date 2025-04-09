@@ -19,9 +19,9 @@ public interface NewsService extends IService<News> {
 
 	boolean updateMetricsWithVersion(News news);
 
-	List<News> getRecommends(int size, long userId);
+	List<News> getRecommends(int size, long userId, long categoryId);
 
-	CompletableFuture<List<News>> getRecommendsAsync(int size, Long userId);
+	CompletableFuture<List<News>> getRecommendsAsync(int size, Long userId, long categoryId);
 
 	// 存储新闻的最小ID和最大ID
 	@Data
