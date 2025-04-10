@@ -6,7 +6,7 @@ import com.yubzhou.model.po.News;
 import com.yubzhou.properties.AsyncProperties;
 import com.yubzhou.properties.FileUploadProperties;
 import com.yubzhou.service.UserService;
-import com.yubzhou.service.impl.NewsLoader;
+import com.yubzhou.service.init.NewsLoader;
 import com.yubzhou.service.impl.NewsServiceImpl;
 import com.yubzhou.util.PathUtil;
 import com.yubzhou.util.RedisUtil;

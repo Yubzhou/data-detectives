@@ -1,10 +1,9 @@
-package com.yubzhou.service.impl;
+package com.yubzhou.service.init;
 
+import com.yubzhou.service.init.NewsLoader;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 class NewsLoaderTest {
@@ -20,5 +19,10 @@ class NewsLoaderTest {
 	@Test
 	public void testInsertNewsCategoryRelations() throws Exception {
 		newsLoader.insertNewsCategoryRelations();
+	}
+
+	@Test
+	public void testUpdateNewsCovers() throws Exception {
+		newsLoader.updateNewsCovers();
 	}
 }

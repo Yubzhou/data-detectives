@@ -3,7 +3,35 @@ package com.yubzhou;
 import com.yubzhou.util.JasyptEncryptor;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 public class JasyptTest {
+
+	private void batchEncryptPassword(List<String> plainTextPasswords) {
+		String encryptedPassword, decryptedPassword;
+		int i = 1;
+		for (String plainTextPassword : plainTextPasswords) {
+			System.out.println("第" + i++ + "个密码：");
+			System.out.println("\t明文密码：" + plainTextPassword);
+			encryptedPassword = JasyptEncryptor.encrypt(plainTextPassword);
+			System.out.println("\t加密后的密码：" + encryptedPassword);
+			decryptedPassword = JasyptEncryptor.decrypt(encryptedPassword);
+			System.out.println("\t解密后的密码：" + decryptedPassword);
+			System.out.println("\n");
+		}
+	}
+
+	private void batchDecryptPassword(List<String> encryptedTextPasswords) {
+		String decryptedPassword;
+		int i = 1;
+		for (String encryptedTextPassword : encryptedTextPasswords) {
+			System.out.println("第" + i++ + "个密码：");
+			System.out.println("\t密文密码：" + encryptedTextPassword);
+			decryptedPassword = JasyptEncryptor.decrypt(encryptedTextPassword);
+			System.out.println("\t解密后的密码：" + decryptedPassword);
+			System.out.println("\n");
+		}
+	}
 
 	@Test
 	public void testGetJasyptEncryptorPassword() {
@@ -11,28 +39,18 @@ public class JasyptTest {
 		System.out.println(System.getenv("JASYPT_ENCRYPTOR_PASSWORD"));
 	}
 
+
 	// 使用Jasypt来加密密码
 	@Test
 	public void testEncryptPassword() {
-		// 要加密的明文密码
-		String plainTextPassword = "123456";
-		System.out.println("密钥：" + JasyptEncryptor.getJasyptEncryptorPassword());
-		// 生成加密后的密码
-		String encryptedPassword = JasyptEncryptor.encrypt(plainTextPassword);
-		System.out.println("加密后的密码：" + encryptedPassword);
-		// 解密密码
-		String decryptedPassword = JasyptEncryptor.decrypt(encryptedPassword);
-		System.out.println("解密后的密码：" + decryptedPassword);
+		List<String> plainTextPasswords = List.of("123456");
+		batchEncryptPassword(plainTextPasswords);
 	}
 
 	// 使用Jasypt来解密密码
 	@Test
 	public void testDecryptPassword() {
-		// 要解密的密文密码
-		String encryptedPassword = "123456";	// 密文密码
-		System.out.println("密钥：" + JasyptEncryptor.getJasyptEncryptorPassword());
-		// 解密密码
-		String decryptedPassword = JasyptEncryptor.decrypt(encryptedPassword);
-		System.out.println("解密后的密码：" + decryptedPassword);
+		List<String> encryptedTextPasswords = List.of("123456");
+		batchDecryptPassword(encryptedTextPasswords);
 	}
 }

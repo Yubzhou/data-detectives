@@ -64,17 +64,21 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
 	}
 
 	@Override
-	public boolean createComment(Long userId, Long newsId, CreateCommentDto createDto) {
+	public Comment createComment(Long userId, Long newsId, CreateCommentDto createDto) {
 		Comment comment = createDto.toEntity(userId, newsId);
-		return this.save(comment);
+		if (this.save(comment)) {
+			return comment;
+		}
+		return null;
 	}
 
 	@Override
 	public boolean deleteComment(Long commentId, Long userId) {
-		return this.lambdaUpdate()
-				.eq(Comment::getId, commentId)
-				.eq(Comment::getUserId, userId) // 只能删除自己的评论
-				.remove();
+		LambdaQueryWrapper<Comment> wrapper = Wrappers.lambdaQuery();
+		wrapper.eq(Comment::getId, commentId)
+				.eq(Comment::getUserId, userId); // 只能删除自己的评论
+		// 只有影响行数大于0时才删除成功
+		return this.remove(wrapper);
 	}
 
 	/**
@@ -110,6 +114,14 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
 				.setIncrBy(Comment::getLikes, isIncrement ? 1 : -1)
 				.update(), globalTaskExecutor); // 使用自定义线程池执行异步任务
 	}
+
+	// 一次性将评论表的某一新闻的评论数同步到新闻表中
+	@Override
+	public void syncCommentCount() {
+		this.baseMapper.syncCommentsCount();
+		log.info("评论数已同步到新闻表中");
+	}
+
 
 	private IPage<CommentVo> listCommentsHandler(Long userId, Long newsId, QueryCommentDto queryDto) {
 		// 设置分页默认参数

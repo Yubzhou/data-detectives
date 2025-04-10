@@ -21,11 +21,14 @@ CREATE TABLE IF NOT EXISTS `user_profiles`
     `user_id`           BIGINT UNSIGNED  NOT NULL COMMENT '用户ID',
     `nickname`          VARCHAR(50)      NOT NULL DEFAULT '匿名用户' COMMENT '昵称',
     `gender`            TINYINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '性别（0:未知，1:男，2:女）',
-    `avatar_url`        VARCHAR(255)     NULL     DEFAULT NULL COMMENT '头像url（只存储相对地址，即不带http://localhost:8080）',
+    `avatar_url`        VARCHAR(255)     NOT NULL DEFAULT '/default/default_avatar.png' COMMENT '头像url（只存储相对地址，即不带http://localhost:8080）',
     `interested_fields` VARCHAR(50)      NULL     DEFAULT NULL COMMENT '感兴趣领域（多个领域用逗号分隔）',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uniq_user` (`user_id`)
 ) COMMENT '用户信息表';
+
+-- 设置用户头像为默认头像（/default/default_avatar.png）
+# UPDATE `user_profiles` SET `avatar_url` = '/default/default_avatar.png' WHERE `avatar_url` IS NULL;
 
 -- 检测记录表（带复合索引）
 CREATE TABLE IF NOT EXISTS `detection_records`
@@ -41,9 +44,57 @@ CREATE TABLE IF NOT EXISTS `detection_records`
     `news_category`         VARCHAR(25)      NULL COMMENT '新闻分类名称（如政治、经济、科技等）',
     `favorite`              TINYINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '收藏状态（0:未收藏，1:已收藏）',
     `created_at`            DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '检测时间',
+    `detection_date`        DATE AS (DATE(`created_at`)) VIRTUAL COMMENT '虚拟生成列',
     PRIMARY KEY (`id`),
-    INDEX `idx_user_time_type_result` (`user_id`, `created_at`, `detection_type`, `detection_result`) COMMENT '用户id+时间+检测类型+检测结论联合索引'
+    INDEX `idx_user_time_type_result` (`user_id`, `created_at`, `detection_type`, `detection_result`) COMMENT
+        '用户id+时间+检测类型+检测结论联合索引',
+    INDEX `idx_user_date` (`user_id`, `detection_date` DESC)
 ) COMMENT ='检测记录表';
+
+# ALTER TABLE `detection_records`
+#     ADD COLUMN `detection_date` DATE AS (DATE(`created_at`)) VIRTUAL,
+#     ADD INDEX `idx_user_date_desc` (`user_id`, `detection_date` DESC);
+#
+# ALTER TABLE `detection_records`
+#     DROP INDEX `idx_user_date`,
+#     ADD INDEX `idx_user_date_desc` (`user_id`, `detection_date` DESC);
+
+# -- 统计用户的总检测次数和最长连续检测天数（基于用户变量）
+# SELECT
+#     -- 直接统计总记录数（不去重）
+#     (SELECT COUNT(*) FROM `detection_records` WHERE `user_id` = 4) AS `total_detections`,
+#     -- 计算最长连续天数（需去重日期）
+#     IFNULL(MAX(`cont_days`), 0)                                    AS `max_continuous_days`
+# FROM (SELECT `grp`,
+#              COUNT(*) AS `cont_days`
+#       FROM (SELECT `detection_date`,
+#                    @`grp` := IF(
+#                            DATEDIFF(`detection_date`, @`prev_date`) = 1 AND @`prev_user` = `user_id`,
+#                            @`grp`,
+#                            @`grp` + 1
+#                              ) AS `grp`,
+#                    @`prev_date` := `detection_date`,
+#                    @`prev_user` := `user_id`
+#             FROM (SELECT DISTINCT `user_id`, `detection_date`
+#                   FROM `detection_records`
+#                   WHERE `user_id` = 4) AS `dedup_dates`, -- 先对日期去重
+#                  (SELECT @`prev_date` := NULL, @`prev_user` := NULL, @`grp` := 0) `vars`
+#             ORDER BY `user_id`, `detection_date`) AS `t`
+#       GROUP BY `grp`) AS `t2`;
+
+
+-- 统计用户的总检测次数和最长连续检测天数（基于窗口函数）
+SELECT (SELECT COUNT(*) FROM `detection_records` WHERE `user_id` = 4) AS `total_detections`,
+       IFNULL(MAX(`cont_days`), 0)                                    AS `max_continuous_days`
+FROM (SELECT COUNT(*) AS `cont_days`
+      FROM (SELECT `user_id`,
+                   `detection_date`,
+                   DATE_SUB(`detection_date`, INTERVAL ROW_NUMBER() OVER (ORDER BY `detection_date`) DAY) AS `grp`
+            FROM (SELECT DISTINCT `user_id`, `detection_date`
+                  FROM `detection_records`
+                  WHERE `user_id` = 4) AS `dedup`) AS `t`
+      GROUP BY `grp`) AS `t2`;
+
 
 -- 新闻表（存储核心新闻数据）
 CREATE TABLE IF NOT EXISTS `news`

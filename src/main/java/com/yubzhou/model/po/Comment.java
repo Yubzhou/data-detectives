@@ -23,11 +23,11 @@ public class Comment {
 
 	private String comment;
 
-	private Integer likes;
+	private Integer likes = 0;
 
 	@JsonFormat(pattern = DateTimeUtil.LOCAL_DATE_TIME_NO_MILLIS_FORMAT)
-	private LocalDateTime createdAt;
+	private LocalDateTime createdAt = LocalDateTime.now();
 
 	@TableField(exist = false) // 表示该字段不是数据库表中的字段，只用于前端返回
-	private Boolean isLiked;
+	private Boolean isLiked = false; // 用户是否对该评论点赞过
 }

@@ -2,10 +2,10 @@ package com.yubzhou.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.yubzhou.model.dto.CreateDetectionRecordDto;
 import com.yubzhou.model.po.DetectionRecord;
+import com.yubzhou.model.vo.DetectionStatsVo;
 
-import java.util.List;
+import java.time.LocalDateTime;
 
 public interface DetectionRecordService extends IService<DetectionRecord> {
 
@@ -17,4 +17,6 @@ public interface DetectionRecordService extends IService<DetectionRecord> {
 			Integer pageNum,
 			Integer pageSize
 	);
+
+	DetectionStatsVo getDetectionStats(long userId);
 }

@@ -3,6 +3,7 @@ package com.yubzhou.config;
 import com.yubzhou.exception.TokenInvalidException;
 import com.yubzhou.interceptor.JwtAuthInterceptor;
 import com.yubzhou.interceptor.TimeZoneInterceptor;
+import com.yubzhou.properties.CorsProperties;
 import com.yubzhou.properties.FileUploadProperties;
 import com.yubzhou.util.JwtUtil;
 import com.yubzhou.util.PathUtil;
@@ -20,6 +21,7 @@ public class GlobalWebMvcConfig implements WebMvcConfigurer {
 	private final JwtUtil jwtUtil;
 
 	private final FileUploadProperties fileUploadProperties;
+	private final CorsProperties corsProperties;
 
 	/**
 	 * 重写父类提供的跨域请求处理的接口
@@ -31,16 +33,20 @@ public class GlobalWebMvcConfig implements WebMvcConfigurer {
 				.addMapping("/**") // 允许所有请求路径
 				// .addMapping("/api/**") // 只允许 /api 开头的请求路径
 
-				// 设置允许跨域请求的域名
-				// .allowedOrigins("*") // 允许所有域名跨域请求
-				.allowedOrigins(
-						"http://localhost:8080",
-						"http://127.0.0.1:5500",
-						"http://127.0.0.1:5173",
-						"http://localhost:8081",
-						"http://localhost:5173",
-						"http://localhost:63342" // idea 内置浏览器访问
-				) // 只允许本机跨域请求
+				.allowedOriginPatterns(
+						corsProperties.getAllowedOriginPatterns()
+				)
+
+				// // 设置允许跨域请求的域名
+				// // .allowedOrigins("*") // 允许所有域名跨域请求
+				// .allowedOrigins(
+				// 		"http://localhost:8080",
+				// 		"http://127.0.0.1:5500",
+				// 		"http://127.0.0.1:5173",
+				// 		"http://localhost:8081",
+				// 		"http://localhost:5173",
+				// 		"http://localhost:63342" // idea 内置浏览器访问
+				// ) // 只允许本机跨域请求
 
 				// 设置允许跨域请求的请求方法
 				// .allowedMethods("*") // 允许所有请求方法
@@ -129,10 +135,15 @@ public class GlobalWebMvcConfig implements WebMvcConfigurer {
 		registry.addResourceHandler("/**")
 				.addResourceLocations("classpath:/static/");
 
-		// 图片存储路径
+		// 上传图片存储路径
 		String imagePath = PathUtil.getExternalPath(fileUploadProperties.getImage().getUploadDir()).toString();
 		registry.addResourceHandler("/uploads/images/**")
 				.addResourceLocations("file:" + imagePath + "/")
 				.setCachePeriod(3600);
+
+		// 默认资源路径（与项目根路径同级）
+		String defaultPath = PathUtil.getExternalPath("./default").toString();
+		registry.addResourceHandler("/default/**")
+				.addResourceLocations("file:" + defaultPath + "/");
 	}
 }

@@ -12,9 +12,11 @@ public interface CommentService extends IService<Comment> {
 
 	IPage<CommentVo> listNewsComments(Long newsId, Long userId, QueryCommentDto queryDto);
 
-	boolean createComment(Long userId, Long newsId, CreateCommentDto createDto);
+	Comment createComment(Long userId, Long newsId, CreateCommentDto createDto);
 
 	boolean deleteComment(Long commentId, Long userId);
 
 	boolean likeComment(Long id, long userId);
+
+	void syncCommentCount();
 }

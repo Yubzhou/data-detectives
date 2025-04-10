@@ -199,6 +199,13 @@
             <artifactId>tika-core</artifactId>
             <version>3.1.0</version>
         </dependency>
+
+        <!-- 分词组件 -->
+        <dependency>
+            <groupId>com.hankcs</groupId>
+            <artifactId>hanlp</artifactId>
+            <version>portable-1.8.6</version>
+        </dependency>
     </dependencies>
 
     <build>

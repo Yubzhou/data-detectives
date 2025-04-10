@@ -7,10 +7,10 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.yubzhou.mapper.DetectionRecordMapper;
 import com.yubzhou.model.po.DetectionRecord;
+import com.yubzhou.model.vo.DetectionStatsVo;
 import com.yubzhou.service.DetectionRecordService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDateTime;
 
@@ -19,8 +19,6 @@ import java.time.LocalDateTime;
 public class DetectionRecordServiceImpl
 		extends ServiceImpl<DetectionRecordMapper, DetectionRecord>
 		implements DetectionRecordService {
-
-	private final TransactionTemplate transactionTemplate;
 
 	/**
 	 * 根据用户ID、时间范围、检测类型和检测结论筛选记录（分页）
@@ -69,4 +67,11 @@ public class DetectionRecordServiceImpl
 		// 执行分页查询（使用联合索引字段）
 		return page(page, wrapper);
 	}
+
+	@Override
+	public DetectionStatsVo getDetectionStats(long userId) {
+		return this.baseMapper.selectDetectionStats(userId);
+	}
+
+
 }

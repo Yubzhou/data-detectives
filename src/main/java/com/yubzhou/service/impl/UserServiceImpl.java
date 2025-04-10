@@ -261,7 +261,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 		String storedCaptcha = (String) redisUtil.get(smsCaptchaKey);
 
 		// Yubzhou TODO 2025/3/21 11:17; 测试使用：先将验证码定死为123456
-		storedCaptcha = "123456";
+		storedCaptcha = "912858";
 
 		// 验证码校验
 		if (storedCaptcha == null) {
