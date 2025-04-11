@@ -51,6 +51,14 @@ public enum UserRole {
 		return this.hierarchyLevel <= targetRole.hierarchyLevel;
 	}
 
+	public boolean isAdmin() {
+		return isHigherOrEqual(ADMIN);
+	}
+
+	public boolean isSuperAdmin() {
+		return this.isHigherOrEqual(SUPER_ADMIN);
+	}
+
 	/**
 	 * 根据角色编码查找枚举（大小写敏感）
 	 */

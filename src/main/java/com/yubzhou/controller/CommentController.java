@@ -61,19 +61,19 @@ public class CommentController {
 
 	// 删除评论
 	@DeleteMapping("/{id:[1-9]\\d*}")
-	public Result<Void> deleteComment(@PathVariable("id") Long id,
+	public Result<Void> deleteComment(@PathVariable("id") Long commentId,
 									  @RequestParam("newsId")
 									  @Min(value = 1, message = "新闻ID不能小于1")
 									  Long newsId) {
 		// 获取用户ID的作用是防止用户删除其他用户的评论，只能删除自己的
 		long userId = WebContextUtil.getCurrentUserId();
-		boolean success = commentService.deleteComment(id, userId);
-		commentService.removeById(id);
-		if (!success) return Result.fail("删除评论失败");
+		boolean success = commentService.deleteComment(commentId, userId);
+		commentService.removeById(commentId);
+		if (!success) return Result.fail("删除评论失败：评论ID不存在或无权删除别人评论");
 		// 如果删除成功，更新新闻指标
 		hotNewsService.asyncUpdateMetricsAndHotness(new UserActionEvent(newsId, userId,
 				UserActionEvent.ActionType.UNCOMMENT, System.currentTimeMillis()));
-		return Result.successWithMessage("删除评论成功");
+		return Result.successWithMessage("删除评论成功，评论ID：" + commentId);
 	}
 
 	// 点赞评论

@@ -169,6 +169,18 @@ CREATE TABLE IF NOT EXISTS `comments`
     INDEX `idx_news_likes_desc` (`news_id`, `likes` DESC)
 ) COMMENT '评论表';
 
+
+SELECT COUNT(*) FROM `comments` WHERE `news_id` = 70;
+
+-- 将新闻的评论数更新到新闻表中
+UPDATE `news` `n`
+SET `n`.`comments` = (
+    SELECT COUNT(*)
+    FROM `comments` `c`
+    WHERE `c`.`news_id` = `n`.`id`
+);
+
+
 -- 用户-新闻关联表（多对多关系）
 CREATE TABLE IF NOT EXISTS `user_news`
 (

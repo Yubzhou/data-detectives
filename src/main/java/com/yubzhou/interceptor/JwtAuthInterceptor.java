@@ -2,11 +2,9 @@ package com.yubzhou.interceptor;
 
 import com.yubzhou.annotation.JwtIgnore;
 import com.yubzhou.common.UserToken;
-import com.yubzhou.exception.TokenInvalidException;
+import com.yubzhou.util.JwtUtil;
 import com.yubzhou.util.LocalAssert;
 import com.yubzhou.util.WebContextUtil;
-import com.yubzhou.util.JwtUtil;
-
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;

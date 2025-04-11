@@ -6,6 +6,8 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.yubzhou.common.RedisConstant;
+import com.yubzhou.common.UserRole;
+import com.yubzhou.common.UserToken;
 import com.yubzhou.mapper.CommentMapper;
 import com.yubzhou.model.dto.CreateCommentDto;
 import com.yubzhou.model.dto.QueryCommentDto;
@@ -79,6 +81,16 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
 				.eq(Comment::getUserId, userId); // 只能删除自己的评论
 		// 只有影响行数大于0时才删除成功
 		return this.remove(wrapper);
+	}
+
+	// 管理员可以强制评论
+	@Override
+	public boolean deleteComment(UserToken userToken, Long commentId) {
+		if (userToken.getRole() == UserRole.SUPER_ADMIN || userToken.getRole() == UserRole.ADMIN) {
+			// 只有影响行数大于0时才删除成功
+			return this.baseMapper.deleteById(commentId) > 0;
+		}
+		return false;
 	}
 
 	/**

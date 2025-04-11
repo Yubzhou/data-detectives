@@ -30,9 +30,4 @@ public class TimeZoneInterceptor implements HandlerInterceptor {
 		WebContextUtil.setTimeZone(zoneId); // 设置时区
 		return true;
 	}
-
-	@Override
-	public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
-		WebContextUtil.removeContext();
-	}
 }

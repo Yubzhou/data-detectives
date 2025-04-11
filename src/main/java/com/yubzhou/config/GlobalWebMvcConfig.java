@@ -1,6 +1,7 @@
 package com.yubzhou.config;
 
 import com.yubzhou.exception.TokenInvalidException;
+import com.yubzhou.interceptor.AdminAuthInterceptor;
 import com.yubzhou.interceptor.JwtAuthInterceptor;
 import com.yubzhou.interceptor.TimeZoneInterceptor;
 import com.yubzhou.properties.CorsProperties;
@@ -9,17 +10,13 @@ import com.yubzhou.util.JwtUtil;
 import com.yubzhou.util.PathUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
-import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
-import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.config.annotation.*;
 
 @Configuration
 @RequiredArgsConstructor
 public class GlobalWebMvcConfig implements WebMvcConfigurer {
 	// 注入自定义的权限拦截器JwtAuthInterceptor所需的JwtUtil对象
 	private final JwtUtil jwtUtil;
-
 	private final FileUploadProperties fileUploadProperties;
 	private final CorsProperties corsProperties;
 
@@ -99,8 +96,8 @@ public class GlobalWebMvcConfig implements WebMvcConfigurer {
 
 		// 添加时区拦截器
 		registry.addInterceptor(new TimeZoneInterceptor())
-				.addPathPatterns("/**");
-
+				.addPathPatterns("/**")
+				.order(1); // 数字越小优先级越高
 
 		// 添加权限拦截器
 		registry.addInterceptor(new JwtAuthInterceptor(jwtUtil))
@@ -110,7 +107,12 @@ public class GlobalWebMvcConfig implements WebMvcConfigurer {
 						"/**/favicon.ico", // 网站图标
 						"/mytest/**",
 						"/druid/**"
-				);
+				)
+				.order(2);
+
+		registry.addInterceptor(new AdminAuthInterceptor())
+				.addPathPatterns("/private/**")      // 拦截所有管理接口
+				.order(3);                          // 设置拦截器顺序（在权限拦截器之后）
 	}
 
 	/**

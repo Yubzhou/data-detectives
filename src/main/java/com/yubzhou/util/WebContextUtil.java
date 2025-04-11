@@ -3,6 +3,7 @@ package com.yubzhou.util;
 import com.yubzhou.common.ReturnCode;
 import com.yubzhou.common.UserToken;
 import com.yubzhou.exception.BusinessException;
+import org.springframework.util.StringUtils;
 
 import java.time.ZoneId;
 import java.util.HashMap;
@@ -36,7 +37,9 @@ public class WebContextUtil {
 	 * @return UserToken token中用户相关的自定义声明
 	 */
 	public static UserToken getUserToken() {
-		return getKey(USER_TOKEN_KEY, UserToken.class);
+		UserToken userToken = getKey(USER_TOKEN_KEY, UserToken.class);
+		if (userToken == null) throw new BusinessException(ReturnCode.USER_NOT_LOGIN);
+		return userToken;
 	}
 
 	// 获取当前用户id
@@ -51,7 +54,9 @@ public class WebContextUtil {
 	}
 
 	public static String getAccessToken() {
-		return getKey(ACCESS_TOKEN_KEY, String.class);
+		String accessToken = getKey(ACCESS_TOKEN_KEY, String.class);
+		if (!StringUtils.hasText(accessToken)) throw new BusinessException(ReturnCode.USER_NOT_LOGIN);
+		return accessToken;
 	}
 
 	public static void setRefreshToken(String refreshToken) {
@@ -59,7 +64,9 @@ public class WebContextUtil {
 	}
 
 	public static String getRefreshToken() {
-		return getKey(REFRESH_TOKEN_KEY, String.class);
+		String refreshToken = getKey(REFRESH_TOKEN_KEY, String.class);
+		if (!StringUtils.hasText(refreshToken)) throw new BusinessException(ReturnCode.USER_NOT_LOGIN);
+		return refreshToken;
 	}
 
 	public static void setTimeZone(ZoneId zoneId) {
