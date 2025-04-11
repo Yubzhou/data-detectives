@@ -315,7 +315,7 @@ public class HotNewsCacheService {
 
 			List<News> newsList;
 			if (!CollectionUtils.isEmpty(newsIds)) {
-				newsList = buildFromCache(newsIds, userId);
+				newsList = buildFromCache(newsIds);
 			} else {
 				newsList = buildFromDB(size, userId, categoryId);
 				// 更新新闻ID集合
@@ -332,25 +332,7 @@ public class HotNewsCacheService {
 		}
 	}
 
-	public List<NewsVo> addUserNewsActions(List<Long> newsIds, List<News> newsList, long userId) {
-		// 获取用户对新闻的操作（比如格式为新闻ID：true）
-		Map<String, Map<Object, Boolean>> actionMap = hotNewsService.getUserNewsAction(newsIds.toArray(), userId);
-		return newsList.stream()
-				.map(news -> new NewsVo(news, NewsVo.UserNewsAction.of(actionMap, news.getId())))
-				.toList();
-	}
-
-	public void addCategories(List<Long> newsIds, List<NewsVo> newsVoList) {
-		Map<Long, List<String>> newsCategoryRelationMap = newsCategoryRelationService.getNewsCategoryRelationMap(newsIds);
-		for (NewsVo newsVo : newsVoList) {
-			List<String> categories = newsCategoryRelationMap.get(newsVo.getNews().getId());
-			newsVo.setCategories(categories);
-		}
-	}
-
-	private List<News> buildFromCache(List<Long> newsIds, long userId) {
-		// 获取用户对新闻的操作（比如格式为新闻ID：true）
-		Map<String, Map<Object, Boolean>> actionMap = hotNewsService.getUserNewsAction(newsIds.toArray(), userId);
+	private List<News> buildFromCache(List<Long> newsIds) {
 		return newsIds.stream()
 				.map(hotNewsService::getNews)
 				.filter(Objects::nonNull)
@@ -372,6 +354,23 @@ public class HotNewsCacheService {
 
 		return newsList;
 	}
+
+	public List<NewsVo> addUserNewsActions(List<Long> newsIds, List<News> newsList, long userId) {
+		// 获取用户对新闻的操作（比如格式为新闻ID：true）
+		Map<String, Map<Object, Boolean>> actionMap = hotNewsService.getUserNewsAction(newsIds.toArray(), userId);
+		return newsList.stream()
+				.map(news -> new NewsVo(news, NewsVo.UserNewsAction.of(actionMap, news.getId())))
+				.toList();
+	}
+
+	public void addCategories(List<Long> newsIds, List<NewsVo> newsVoList) {
+		Map<Long, List<String>> newsCategoryRelationMap = newsCategoryRelationService.getNewsCategoryRelationMap(newsIds);
+		for (NewsVo newsVo : newsVoList) {
+			List<String> categories = newsCategoryRelationMap.get(newsVo.getNews().getId());
+			newsVo.setCategories(categories);
+		}
+	}
+
 
 	// 缓存类型：1小时、24小时、7天
 	public enum CacheType {

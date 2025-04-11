@@ -19,12 +19,10 @@ import java.util.List;
 @Slf4j
 public class HotNewsController {
 	private final HotNewsCacheService hotNewsCacheService;
-	private final NewsCategoryService newsCategoryService;
 
 	@Autowired
 	public HotNewsController(HotNewsCacheService hotNewsCacheService, NewsCategoryService newsCategoryService) {
 		this.hotNewsCacheService = hotNewsCacheService;
-		this.newsCategoryService = newsCategoryService;
 	}
 
 	// 查询1小时缓存热点top10

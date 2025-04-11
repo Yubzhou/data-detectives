@@ -51,6 +51,9 @@ CREATE TABLE IF NOT EXISTS `detection_records`
     INDEX `idx_user_date` (`user_id`, `detection_date` DESC)
 ) COMMENT ='检测记录表';
 
+SHOW CREATE TABLE detection_records;
+
+
 # ALTER TABLE `detection_records`
 #     ADD COLUMN `detection_date` DATE AS (DATE(`created_at`)) VIRTUAL,
 #     ADD INDEX `idx_user_date_desc` (`user_id`, `detection_date` DESC);

@@ -33,6 +33,7 @@ public class DetectionRecord {
 
 	private Boolean favorite; // 收藏状态（false：未收藏，true：已收藏）
 
+	@TableField(fill = FieldFill.INSERT) // 插入时自动填充时间
 	@JsonFormat(pattern = DateTimeUtil.LOCAL_DATE_TIME_NO_MILLIS_FORMAT)
 	private LocalDateTime createdAt; // 创建时间
 }

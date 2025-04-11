@@ -25,6 +25,7 @@ public class Comment {
 
 	private Integer likes = 0;
 
+	@TableField(fill = FieldFill.INSERT) // 插入时自动填充时间
 	@JsonFormat(pattern = DateTimeUtil.LOCAL_DATE_TIME_NO_MILLIS_FORMAT)
 	private LocalDateTime createdAt = LocalDateTime.now();
 

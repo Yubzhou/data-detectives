@@ -1,5 +1,7 @@
 package com.yubzhou.model.po;
 
+import com.baomidou.mybatisplus.annotation.FieldFill;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -40,9 +42,11 @@ public class News {
 	@JsonIgnore // 忽略该字段，不进行序列化
 	private Integer version; // 版本号
 
+	@TableField(fill = FieldFill.INSERT) // 插入时自动填充时间
 	@JsonFormat(pattern = DateTimeUtil.LOCAL_DATE_TIME_NO_MILLIS_FORMAT)
 	private LocalDateTime createdAt; // 创建时间
 
+	@TableField(fill = FieldFill.INSERT_UPDATE) // 插入和更新时自动填充时间
 	@JsonFormat(pattern = DateTimeUtil.LOCAL_DATE_TIME_NO_MILLIS_FORMAT)
 	@JsonIgnore // 忽略该字段，不进行序列化
 	private LocalDateTime updatedAt; // 更新时间

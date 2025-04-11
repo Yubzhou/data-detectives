@@ -92,6 +92,10 @@ public class HotNewsUtil {
 		return base * (MIN_RATE + (1 - MIN_RATE) * Math.exp(-lambda * deltaDays));
 	}
 
+	public static void main(String[] args) {
+		System.out.println(calculateDecayedHotness(170.36, LocalDateTime.now().minusDays(3)));
+	}
+
 	// public static void main(String[] args) {
 	// 	// test01();
 	// 	test02();
