@@ -9,10 +9,7 @@ import com.yubzhou.mapper.UserMapper;
 import com.yubzhou.model.po.User;
 import com.yubzhou.service.UserProfileService;
 import com.yubzhou.service.UserService;
-import com.yubzhou.util.BCryptUtil;
-import com.yubzhou.util.JwtUtil;
-import com.yubzhou.util.LocalAssert;
-import com.yubzhou.util.RedisUtil;
+import com.yubzhou.util.*;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -251,6 +248,17 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 	}
 
 	private void smsCaptchaHandler(User user, String captcha) throws BusinessException {
+		// Yubzhou TODO 2025/4/15 17:21; 暂时不支持移动手机号的短信验证码功能
+		// 如果是移动手机号则直接通过（因为移动手机号不支持手机验证码功能）
+		// if (PhoneUtil.isChinaMobile(user.getPhone())) {
+		// 	return;
+		// }
+
+		// 如果是移动手机号则直接拒绝（因为移动手机号无法使用短信验证码服务）
+		if (PhoneUtil.isChinaMobile(user.getPhone())) {
+			throw new BusinessException(403, "移动手机号不支持短信验证码功能");
+		}
+
 		// 检查账号是否被锁定（验证码错误次数限制，如5次错误后锁定1小时）
 		String smsLockKey = RedisConstant.SMS_LOCK_PREFIX + user.getPhone();
 		if (redisUtil.hasKey(smsLockKey)) {
@@ -261,7 +269,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 		String storedCaptcha = (String) redisUtil.get(smsCaptchaKey);
 
 		// Yubzhou TODO 2025/3/21 11:17; 测试使用：先将验证码定死为123456
-		storedCaptcha = "912858";
+		// storedCaptcha = "912858";
 
 		// 验证码校验
 		if (storedCaptcha == null) {

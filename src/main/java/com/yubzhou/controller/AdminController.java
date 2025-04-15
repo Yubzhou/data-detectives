@@ -1,10 +1,13 @@
 package com.yubzhou.controller;
 
 import com.yubzhou.common.Result;
+import com.yubzhou.common.UserActionEvent;
 import com.yubzhou.common.UserToken;
 import com.yubzhou.consumer.HotNewsCacheService;
+import com.yubzhou.consumer.HotNewsService;
 import com.yubzhou.service.CommentService;
 import com.yubzhou.util.WebContextUtil;
+import jakarta.validation.constraints.Min;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -20,16 +23,18 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 public class AdminController {
 
+	private final HotNewsService hotNewsService;
 	private final HotNewsCacheService hotNewsCacheService;
 	private final CommentService commentService;
 	private final ThreadPoolTaskExecutor globalTaskExecutor;
 	private final RedisConnectionFactory redisConnectionFactory;
 
 	@Autowired
-	public AdminController(HotNewsCacheService hotNewsCacheService,
+	public AdminController(HotNewsService hotNewsService, HotNewsCacheService hotNewsCacheService,
 						   CommentService commentService,
 						   @Qualifier("globalTaskExecutor") ThreadPoolTaskExecutor globalTaskExecutor,
 						   RedisConnectionFactory redisConnectionFactory) {
+		this.hotNewsService = hotNewsService;
 		this.hotNewsCacheService = hotNewsCacheService;
 		this.commentService = commentService;
 		this.globalTaskExecutor = globalTaskExecutor;
@@ -73,10 +78,19 @@ public class AdminController {
 
 	// 删除指定评论
 	@DeleteMapping("/comment/{id:[1-9]\\d*}")
-	public Result<?> deleteComment(@PathVariable("id") Long commentId) {
+	public Result<?> deleteComment(@PathVariable("id") Long commentId,
+								   @RequestParam("newsId")
+								   @Min(value = 1, message = "新闻ID不能小于1")
+								   Long newsId,
+								   @RequestParam("userId")
+								   @Min(value = 1, message = "用户ID不能小于1")
+								   Long userId) {
 		UserToken userToken = WebContextUtil.getUserToken();
 		boolean success = commentService.deleteComment(userToken, commentId);
 		if (!success) return Result.fail("删除评论失败：权限不足或评论ID不存在");
+		// 如果删除成功，异步更新新闻指标
+		hotNewsService.asyncUpdateMetricsAndHotness(new UserActionEvent(newsId, userId,
+				UserActionEvent.ActionType.UNCOMMENT, System.currentTimeMillis()));
 		return Result.successWithMessage("删除评论成功，评论ID：" + commentId);
 	}
 }

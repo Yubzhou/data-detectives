@@ -3,6 +3,7 @@ package com.yubzhou.controller;
 import com.yubzhou.annotation.JwtIgnore;
 import com.yubzhou.common.RegexpConstant;
 import com.yubzhou.common.Result;
+import com.yubzhou.common.ReturnCode;
 import com.yubzhou.common.UserToken;
 import com.yubzhou.model.dto.LoginUserDto;
 import com.yubzhou.model.dto.RegisterUserDto;
@@ -10,6 +11,7 @@ import com.yubzhou.model.po.User;
 import com.yubzhou.properties.AliyunSmsProperties.TemplateCode;
 import com.yubzhou.service.SmsService;
 import com.yubzhou.service.UserService;
+import com.yubzhou.util.PhoneUtil;
 import com.yubzhou.util.WebContextUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -39,8 +41,8 @@ public class UserController {
 	 */
 	@JwtIgnore // 自定义注解，忽略JWT验证
 	@PostMapping("/users/register")
-	public Result<Map<String, Map<String, String>>> register(@Valid @RequestBody RegisterUserDto registerUserDto,
-															 HttpServletRequest request) {
+	public Result<?> register(@Valid @RequestBody RegisterUserDto registerUserDto,
+							  HttpServletRequest request) {
 		// 拷贝dto到po
 		User registerUser = RegisterUserDto.toEntity(registerUserDto);
 		// 用户注册
@@ -59,8 +61,8 @@ public class UserController {
 	 */
 	@JwtIgnore // 自定义注解，忽略JWT验证
 	@PostMapping("/users/login/captcha")
-	public Result<Map<String, Map<String, String>>> loginWithCaptcha(@Validated(LoginUserDto.CaptchaLogin.class) @RequestBody LoginUserDto loginUserDto,
-																	 HttpServletRequest request) {
+	public Result<?> loginWithCaptcha(@Validated(LoginUserDto.CaptchaLogin.class) @RequestBody LoginUserDto loginUserDto,
+									  HttpServletRequest request) {
 		// 拷贝dto到po
 		User loginUser = LoginUserDto.toEntity(loginUserDto);
 		// 登录
@@ -79,8 +81,8 @@ public class UserController {
 	 */
 	@JwtIgnore // 自定义注解，忽略JWT验证
 	@PostMapping("/users/login/password")
-	public Result<Map<String, Map<String, String>>> loginWithPassword(@Validated(LoginUserDto.PasswordLogin.class) @RequestBody LoginUserDto loginUserDto,
-																	  HttpServletRequest request) {
+	public Result<?> loginWithPassword(@Validated(LoginUserDto.PasswordLogin.class) @RequestBody LoginUserDto loginUserDto,
+									   HttpServletRequest request) {
 		// 拷贝dto到po
 		User loginUser = LoginUserDto.toEntity(loginUserDto);
 		// 登录
@@ -132,6 +134,11 @@ public class UserController {
 			@RequestParam("phone") String phone,
 			@RequestParam("templateCode") String templateCode,
 			HttpServletRequest request) {
+		// Yubzhou TODO 2025/4/15 17:21; 暂时不支持移动手机号的短信验证码功能
+		if (PhoneUtil.isChinaMobile(phone)) {
+			return Result.fail(ReturnCode.SERVER_UNAVAILABLE.getCode(),
+					"根据工信部短信签名实名制管理的最新要求，手机短信验证码功能暂停服务。");
+		}
 		TemplateCode template = TemplateCode.from(templateCode);
 		// 发送短信验证码
 		smsService.sendSmsCaptcha(phone, template, request);

@@ -29,7 +29,9 @@ public enum ReturnCode {
 	NEW_PASSWORD_EQUAL_OLD_PASSWORD(RC400.code, "新密码不能与原密码相同"),
 	USER_DISABLED(RC401.code, "账号被禁用"),
 	USER_LOCKED(RC401.code, "账号被锁定"),
-	USER_LOGOUT(RC401.code, "账号已注销");
+	USER_LOGOUT(RC401.code, "账号已注销"),
+	// 服务不可用
+	SERVER_UNAVAILABLE(RC503.code, "服务器不可用");
 
 	private final int code;
 	private final String message;

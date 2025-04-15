@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS `detection_records`
     INDEX `idx_user_date` (`user_id`, `detection_date` DESC)
 ) COMMENT ='检测记录表';
 
-SHOW CREATE TABLE detection_records;
+SHOW CREATE TABLE `detection_records`;
 
 
 # ALTER TABLE `detection_records`
@@ -169,16 +169,25 @@ CREATE TABLE IF NOT EXISTS `comments`
     INDEX `idx_news_likes_desc` (`news_id`, `likes` DESC)
 ) COMMENT '评论表';
 
+-- 当新闻的反对数为0时，删除全部该新闻的评论
+DELETE
+FROM `comments`
+WHERE `news_id` IN (SELECT `id` FROM `news` WHERE `opposes` = 0);
+-- 并且也更新对应的评论数为0
+UPDATE `news`
+SET `comments` = 0
+WHERE `opposes` = 0;
 
-SELECT COUNT(*) FROM `comments` WHERE `news_id` = 70;
+
+SELECT COUNT(*)
+FROM `comments`
+WHERE `news_id` = 70;
 
 -- 将新闻的评论数更新到新闻表中
 UPDATE `news` `n`
-SET `n`.`comments` = (
-    SELECT COUNT(*)
-    FROM `comments` `c`
-    WHERE `c`.`news_id` = `n`.`id`
-);
+SET `n`.`comments` = (SELECT COUNT(*)
+                      FROM `comments` `c`
+                      WHERE `c`.`news_id` = `n`.`id`);
 
 
 -- 用户-新闻关联表（多对多关系）
