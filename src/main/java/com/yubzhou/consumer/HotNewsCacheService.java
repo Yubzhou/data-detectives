@@ -2,6 +2,7 @@ package com.yubzhou.consumer;
 
 import com.yubzhou.common.HotNewsActionTracker;
 import com.yubzhou.common.RedisConstant;
+import com.yubzhou.common.UserActionEvent;
 import com.yubzhou.model.po.News;
 import com.yubzhou.model.vo.HotNews;
 import com.yubzhou.model.vo.NewsVo;
@@ -23,10 +24,7 @@ import org.springframework.util.CollectionUtils;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.stream.IntStream;
 
 
@@ -59,11 +57,20 @@ public class HotNewsCacheService {
 		this.newsCategoryRelationService = newsCategoryRelationService;
 	}
 
+	private static final Random RANDOM = new Random();
+
 	// 使用并发集合
+	private final Map<String, Object> NEWS_META = new ConcurrentHashMap<>();
 	private final List<HotNews> HOT_NEWS_HOUR_CACHE_TOP10 = new CopyOnWriteArrayList<>();
 	private final List<HotNews> HOT_NEWS_24HOUR_CACHE_TOP10 = new CopyOnWriteArrayList<>();
 	private final List<HotNews> HOT_NEWS_WEEK_CACHE_TOP10 = new CopyOnWriteArrayList<>();
 
+	// 同步新闻元数据
+	public void setMinAndMaxId(NewsService.MinAndMaxId minAndMaxId) {
+		synchronized (NEWS_META) {
+			NEWS_META.put("minAndMaxId", minAndMaxId);
+		}
+	}
 
 	// 同步更新1小时缓存
 	private void setHourCacheTop10(List<HotNews> top10) {
@@ -89,6 +96,11 @@ public class HotNewsCacheService {
 		}
 	}
 
+	// 获取新闻元数据
+	public NewsService.MinAndMaxId getMinAndMaxId() {
+		return (NewsService.MinAndMaxId) NEWS_META.get("minAndMaxId");
+	}
+
 	// 获取1小时热点缓存
 	public List<HotNews> getHourCacheTop10() {
 		return HOT_NEWS_HOUR_CACHE_TOP10;
@@ -102,6 +114,20 @@ public class HotNewsCacheService {
 	// 获取7天热点缓存
 	public List<HotNews> getWeekCacheTop10() {
 		return HOT_NEWS_WEEK_CACHE_TOP10;
+	}
+
+	// Yubzhou TODO 2025/4/17 12:35; 添加了新闻要手动触发更新元数据缓存
+	// 刷新新闻元数据缓存
+	@Scheduled(cron = "0 0 0 * * ?") // 每天0点整执行一次
+	public void loadCacheNewsMeta() {
+		NewsService.MinAndMaxId minAndMaxId = newsService.findMinAndMaxId();
+		if (minAndMaxId == null) return;
+		redisUtil.hmset(RedisConstant.NEWS_META,
+				Map.of("minId", minAndMaxId.getMinId(), "maxId", minAndMaxId.getMaxId()));
+
+		setMinAndMaxId(minAndMaxId);
+
+		log.info("刷新新闻元数据缓存完成");
 	}
 
 	// 每天凌晨合并前一天的小时数据到天级Key
@@ -120,10 +146,12 @@ public class HotNewsCacheService {
 	}
 
 	// 刷新1小时热点缓存
-	@Scheduled(fixedDelay = 180_000, initialDelay = 180_000)
-	// 启动后延迟3分钟，之后每3分钟执行一次。fixedDelay:：每次执行间隔时间（以上次执行结束时间为基准），initialDelay: 任务首次执行前的初始延迟
+	@Scheduled(fixedDelay = 180_000, initialDelay = 120_000)
+	// 启动后延迟2分钟，之后每3分钟执行一次。fixedDelay:：每次执行间隔时间（以上次执行结束时间为基准），initialDelay: 任务首次执行前的初始延迟
 	public void refresh1hCache() {
-		refresh1hCache(false);
+		String currentHourKey = RedisConstant.HOT_NEWS_HOUR_PREFIX + HotNewsUtil.getCurrentHour();
+		boolean force = redisUtil.zSize(currentHourKey) < 10L; // 如果当前小时窗口缓存不足10个，则强制更新
+		refresh1hCache(force);
 	}
 
 	// 刷新24小时热点缓存
@@ -159,6 +187,10 @@ public class HotNewsCacheService {
 		// 合并前一个小时的数据和当前小时数据到临时Key
 		redisUtil.del(mergedKey); // 合并前先清空临时Key
 		redisUtil.zUnionAndStore(currentHourKey, hourKeys, mergedKey);
+
+		// 添加随机新闻到缓存
+		addRandomNewsToCache(mergedKey);
+
 		cacheTop10(mergedKey, CacheType.HOUR);
 		redisUtil.expire(mergedKey, 1, TimeUnit.HOURS); // 保留1小时，设置过期时间防止内存泄漏
 
@@ -209,6 +241,27 @@ public class HotNewsCacheService {
 		redisUtil.expire(mergedKey, 8, TimeUnit.DAYS); // 保留8天，设置过期时间防止内存泄漏
 
 		log.info("7天热点新闻缓存刷新完成");
+	}
+
+	// 如果合并后的1小时热点新闻数为n个（小于10），则随机将10-n个新闻加入到缓存中（增加其浏览量）
+	// 防止1小时新闻热点数据为空
+	private void addRandomNewsToCache(String mergedKey) {
+		long size = redisUtil.zSize(mergedKey);
+		if (size >= 10L) {
+			log.info("1小时热点新闻缓存已满，跳过随机新闻加入");
+			return;
+		}
+		NewsService.MinAndMaxId minAndMaxId = getMinAndMaxId();
+		int needSize = 10 - (int) size;
+		Set<Long> candidateIds = new HashSet<>(15); // 最大needSize为10，设置初始容量为15 防止扩容
+		while (candidateIds.size() <= needSize) {
+			Long newsId = RANDOM.nextLong(minAndMaxId.getMinId(), minAndMaxId.getMaxId() + 1);
+			candidateIds.add(newsId);
+		}
+		candidateIds.forEach(newsId -> {
+			hotNewsService.asyncUpdateMetricsAndHotness(new UserActionEvent(newsId, 0L, UserActionEvent.ActionType.VIEW, System.currentTimeMillis()));
+		});
+		log.info("随机加入{}个新闻到1小时热点新闻缓存", needSize);
 	}
 
 	// 加载缓存数据到Java内存
@@ -370,7 +423,6 @@ public class HotNewsCacheService {
 			newsVo.setCategories(categories);
 		}
 	}
-
 
 	// 缓存类型：1小时、24小时、7天
 	public enum CacheType {

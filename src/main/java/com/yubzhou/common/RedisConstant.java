@@ -44,6 +44,9 @@ public class RedisConstant {
 	// 新闻分类锁前缀
 	public static final String NEWS_CATEGORY_LOCK_PREFIX = "news:category:lock:";
 
+	// 新闻元数据（记录当前新闻的最小ID和最大ID）
+	public static final String NEWS_META = "news:meta";
+
 	// 新闻详情的前缀
 	public static final String NEWS_DETAIL_PREFIX = "news:detail:";
 

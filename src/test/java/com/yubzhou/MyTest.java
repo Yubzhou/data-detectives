@@ -4,6 +4,7 @@ import com.yubzhou.common.ReturnCode;
 import com.yubzhou.common.UserActionEvent;
 import com.yubzhou.exception.BusinessException;
 import com.yubzhou.properties.JwtTimeUnit;
+import com.yubzhou.service.NewsService;
 import com.yubzhou.util.ClientFingerprintUtil;
 import com.yubzhou.util.PathUtil;
 import org.junit.jupiter.api.Test;
@@ -14,9 +15,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
@@ -314,5 +313,25 @@ public class MyTest {
 		Class<Long> clazz = Long.class;
 		Integer a = 1;
 		System.out.println(clazz.cast(a));
+	}
+
+	@Test
+	public void test21() throws Exception {
+		Map<String, Object> map = new HashMap<>();
+		map.put("minAndMaxId", new NewsService.MinAndMaxId(1L, 100L));
+		System.out.println(map.get("minAndMaxId"));
+		System.out.println(map.get("minAndMaxId").getClass());
+		NewsService.MinAndMaxId minAndMaxId = (NewsService.MinAndMaxId) map.get("minAndMaxId");
+		System.out.println(minAndMaxId.getMinId());
+		System.out.println(minAndMaxId.getMaxId());
+	}
+
+	@Test
+	public void test22() throws Exception {
+		Set<Long> set = new HashSet<>();
+		set.add(1L);
+		set.add(1L);
+		set.add(1L);
+		System.out.println(set.size());
 	}
 }

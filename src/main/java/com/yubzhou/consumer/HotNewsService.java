@@ -60,8 +60,6 @@ public class HotNewsService {
 		log.info("Received user action event: {}", event);
 		// 更新新闻指标和热度
 		asyncUpdateMetricsAndHotness(event);
-		// 标记最近一次用户行为事件
-		hotNewsActionTracker.markAction();
 	}
 
 	// 获取新闻详情，返回News
@@ -185,6 +183,9 @@ public class HotNewsService {
 
 	// 异步更新新闻指标并刷新1小时热度
 	public void asyncUpdateMetricsAndHotness(UserActionEvent event) {
+		// 标记最近一次用户行为事件
+		hotNewsActionTracker.markAction();
+
 		globalTaskExecutor.execute(() -> {
 			// 强制触发缓存加载（防止redis中缓存失效）
 			News news = getNews(event.getNewsId());
@@ -214,7 +215,7 @@ public class HotNewsService {
 			// 从redis中获取指定新闻的指标
 			Map<Object, Object> newsMap = redisUtil.hmget(newsKey);
 			// 转换为News对象
-			News news = News.fromRedisMap(newsMap);
+			News news = News.fromRedisMapForMetrics(newsMap);
 
 			// 使用CAS乐观锁更新
 			boolean success = newsService.updateMetricsWithVersion(news);

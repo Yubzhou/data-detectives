@@ -42,7 +42,7 @@ public class NewsCategoryServiceImpl
 	@Override
 	public void loadCacheNewsCategories() {
 		List<NewsCategory> newsCategories = getAllNewsCategories();
-		log.debug("从数据库获取到全部新闻分类：{}", newsCategories);
+		log.info("从数据库获取到全部新闻分类：{}", newsCategories);
 		// 缓存新闻分类到Redis中
 		cacheNewsCategoriesToRedis(newsCategories);
 		// 缓存新闻分类到Java内存中

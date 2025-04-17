@@ -91,4 +91,18 @@ public class News {
 		// news.setUpdatedAt(DateTimeUtil.parseLocalDateTimeNoMillis(map.get("updatedAt").toString()));
 		return news;
 	}
+
+	// 将Map转换为新闻对象，只要指标字段（从redis中获取的）
+	public static News fromRedisMapForMetrics(Map<Object, Object> map) {
+		// 从Map中创建新闻对象
+		News news = new News();
+		news.setId(Long.parseLong(map.get("id").toString()));
+		news.setViews((Integer) map.get("views"));
+		news.setSupports((Integer) map.get("supports"));
+		news.setOpposes((Integer) map.get("opposes"));
+		news.setComments((Integer) map.get("comments"));
+		news.setFavorites((Integer) map.get("favorites"));
+		news.setVersion((Integer) map.get("version"));
+		return news;
+	}
 }

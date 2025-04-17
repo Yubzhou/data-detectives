@@ -79,7 +79,7 @@ public class NewsCategoryRelationServiceImpl
 			String categoryKey = RedisConstant.NEWS_CATEGORY_SET_PREFIX + newsCategoryRelation.getCategoryId();
 			redisTemplate.opsForSet().add(categoryKey, newsCategoryRelation.getNewsId());
 		});
-		log.debug("缓存所有新闻-分类关系成功");
+		log.info("缓存所有新闻-分类关系成功");
 	}
 
 	public Map<Long, List<String>> getNewsCategoryRelationMap(List<Long> newsIds) {

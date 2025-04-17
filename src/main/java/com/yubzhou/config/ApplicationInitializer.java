@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-public class CacheInitializer implements ApplicationRunner {
+public class ApplicationInitializer implements ApplicationRunner {
 
 	private final HotNewsCacheService hotNewsCacheService;
 	private final NewsCategoryService newsCategoryService;
@@ -18,6 +18,13 @@ public class CacheInitializer implements ApplicationRunner {
 
 	@Override
 	public void run(ApplicationArguments args) throws Exception {
+		// 加载缓存
+		loadCache();
+	}
+
+	private void loadCache() {
+		// 加载新闻元数据（新闻最小ID和最大ID）
+		hotNewsCacheService.loadCacheNewsMeta();
 		// 加载热点新闻缓存到Java内存中
 		hotNewsCacheService.loadCacheTop10();
 		// 从数据库中加载新闻分类缓存到redis和Java内存中

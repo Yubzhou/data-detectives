@@ -3,6 +3,7 @@ package com.yubzhou.service.impl;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.yubzhou.common.RedisConstant;
+import com.yubzhou.consumer.HotNewsCacheService;
 import com.yubzhou.mapper.NewsMapper;
 import com.yubzhou.model.po.News;
 import com.yubzhou.service.NewsService;
@@ -10,6 +11,7 @@ import com.yubzhou.util.RedisUtil;
 import com.yubzhou.util.TypeConverter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -23,12 +25,15 @@ import java.util.stream.Stream;
 public class NewsServiceImpl extends ServiceImpl<NewsMapper, News> implements NewsService {
 
 	private final RedisUtil redisUtil;
+	private final HotNewsCacheService hotNewsCacheService;
 
-	public NewsServiceImpl(RedisUtil redisUtil) {
+	public NewsServiceImpl(RedisUtil redisUtil,
+						   @Lazy HotNewsCacheService hotNewsCacheService) {
 		this.redisUtil = redisUtil;
+		this.hotNewsCacheService = hotNewsCacheService;
 	}
 
-	public static final Random random = new Random();
+	public static final Random RANDOM = new Random();
 
 	@Override
 	public MinAndMaxId findMinAndMaxId() {
@@ -80,7 +85,7 @@ public class NewsServiceImpl extends ServiceImpl<NewsMapper, News> implements Ne
 				.set(news.getVersion() != null, News::getVersion, currentVersion + 1); // 乐观锁，版本号加1
 
 		// 3. 判断是否更新成功
-		return this.update(news, wrapper);
+		return this.update(wrapper);
 	}
 
 	// 从数据库中获取推荐新闻（按发布时间获取最新新闻）
@@ -125,7 +130,7 @@ public class NewsServiceImpl extends ServiceImpl<NewsMapper, News> implements Ne
 		MinAndMaxId minMax = null;
 		if (categoryId == 0L) {
 			// 1. 获取新闻ID范围
-			minMax = findMinAndMaxId();
+			minMax = hotNewsCacheService.getMinAndMaxId();
 			total = minMax.getMaxId() - minMax.getMinId() + 1;
 		} else {
 			total = redisUtil.sSize(RedisConstant.NEWS_CATEGORY_SET_PREFIX + categoryId);
@@ -196,7 +201,7 @@ public class NewsServiceImpl extends ServiceImpl<NewsMapper, News> implements Ne
 		if (categoryId == 0L) {
 			// 如果数量未达到limit，则继续生成随机ID
 			while (candidateIds.size() < limit) { // 确保生成的ID数量足够
-				long randomId = random.nextLong(minMax.getMinId(), minMax.getMaxId() + 1);
+				long randomId = RANDOM.nextLong(minMax.getMinId(), minMax.getMaxId() + 1);
 				if (excludeIds.contains(randomId)) continue; // 排除已推荐的新闻
 				candidateIds.add(randomId);
 			}
