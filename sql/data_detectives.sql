@@ -189,6 +189,9 @@ SET `n`.`comments` = (SELECT COUNT(*)
                       FROM `comments` `c`
                       WHERE `c`.`news_id` = `n`.`id`);
 
+-- 删除用户id大于394的评论
+DELETE FROM `comments` WHERE `user_id` > 394;
+
 
 -- 用户-新闻关联表（多对多关系）
 CREATE TABLE IF NOT EXISTS `user_news`

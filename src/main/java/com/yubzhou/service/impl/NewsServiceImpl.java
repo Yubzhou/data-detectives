@@ -2,6 +2,7 @@ package com.yubzhou.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.yubzhou.common.MinAndMaxId;
 import com.yubzhou.common.RedisConstant;
 import com.yubzhou.consumer.HotNewsCacheService;
 import com.yubzhou.mapper.NewsMapper;
@@ -36,7 +37,7 @@ public class NewsServiceImpl extends ServiceImpl<NewsMapper, News> implements Ne
 	public static final Random RANDOM = new Random();
 
 	@Override
-	public MinAndMaxId findMinAndMaxId() {
+	public MinAndMaxId getMinAndMaxId() {
 		// SELECT MIN(id) AS minId, MAX(id) AS maxId FROM news
 		MinAndMaxId minMax = this.baseMapper.getMinAndMaxId();
 		if (minMax == null || minMax.getMinId() == null || minMax.getMaxId() == null) return null;

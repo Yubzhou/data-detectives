@@ -3,8 +3,10 @@ package com.yubzhou.util;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -15,11 +17,15 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class RedisUtil {
 	private final RedisTemplate<String, Object> redisTemplate;
+	private final DefaultRedisScript<Long> deleteByPrefixScript;
 	private final ObjectMapper mapper;
 
 	@Autowired
-	public RedisUtil(RedisTemplate<String, Object> redisTemplate, ObjectMapper mapper) {
+	public RedisUtil(RedisTemplate<String, Object> redisTemplate,
+					 @Qualifier("deleteByPrefixScript") DefaultRedisScript<Long> deleteByPrefixScript,
+					 ObjectMapper mapper) {
 		this.redisTemplate = redisTemplate;
+		this.deleteByPrefixScript = deleteByPrefixScript;
 		this.mapper = mapper;
 	}
 
@@ -104,6 +110,36 @@ public class RedisUtil {
 	 */
 	public Set<String> keys(String pattern) {
 		return redisTemplate.keys(pattern);
+	}
+
+	/**
+	 * 增强版删除方法（支持动态参数）
+	 *
+	 * @param pattern   键模式（必填）
+	 * @param scanCount 单次扫描数量（可选）
+	 * @param batchSize 批量删除数量（可选）
+	 * @return 删除的键数量
+	 */
+	public Long deleteByPrefix(String pattern,
+							   Integer scanCount,
+							   Integer batchSize) {
+		try {
+			// 执行脚本
+			return redisTemplate.execute(
+					deleteByPrefixScript, // 脚本
+					Collections.emptyList(), // 键名参数
+					pattern,  // 参数列表
+					scanCount != null ? scanCount : 500,
+					batchSize != null ? batchSize : 100
+			);
+		} catch (Exception e) {
+			log.error("Redis deleteWithParams error, pattern: {}", pattern, e);
+		}
+		return 0L;
+	}
+
+	public Long deleteByPrefix(String pattern) {
+		return deleteByPrefix(pattern, null, null);
 	}
 
 	// ============================= String ============================

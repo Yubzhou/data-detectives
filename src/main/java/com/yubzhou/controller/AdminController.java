@@ -93,4 +93,11 @@ public class AdminController {
 				UserActionEvent.ActionType.UNCOMMENT, System.currentTimeMillis()));
 		return Result.successWithMessage("删除评论成功，评论ID：" + commentId);
 	}
+
+	// 同步评论表中的评论数到新闻表中
+	@GetMapping("/comment/sync")
+	public Result<?> syncCommentCount() {
+		commentService.syncCommentCount();
+		return Result.successWithMessage("评论数已同步到新闻表中");
+	}
 }

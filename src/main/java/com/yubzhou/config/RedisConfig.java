@@ -46,4 +46,13 @@ public class RedisConfig {
 		script.setResultType(List.class);
 		return script;
 	}
+
+	// 配置Lua脚本
+	@Bean("deleteByPrefixScript")
+	public DefaultRedisScript<Long> deleteByPrefixScript() {
+		DefaultRedisScript<Long> script = new DefaultRedisScript<>();
+		script.setLocation(new ClassPathResource("scripts/delete_by_prefix.lua"));
+		script.setResultType(Long.class);
+		return script;
+	}
 }

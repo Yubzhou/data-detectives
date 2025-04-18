@@ -217,6 +217,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 				.update();
 	}
 
+	@Override
+	public MinAndMaxId getMinAndMaxId() {
+		// SELECT MIN(id) AS minId, MAX(id) AS maxId FROM news
+		MinAndMaxId minMax = this.baseMapper.getMinAndMaxId();
+		if (minMax == null || minMax.getMinId() == null || minMax.getMaxId() == null) return null;
+		return minMax;
+	}
+
 	// 根据用户ID查询用户部分信息
 	@Override
 	public User findByUserId(@NonNull Long userId) {

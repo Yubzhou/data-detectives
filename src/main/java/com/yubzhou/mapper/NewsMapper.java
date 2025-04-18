@@ -2,7 +2,7 @@ package com.yubzhou.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.yubzhou.model.po.News;
-import com.yubzhou.service.NewsService.MinAndMaxId;
+import com.yubzhou.common.MinAndMaxId;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 

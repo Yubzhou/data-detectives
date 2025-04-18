@@ -130,8 +130,12 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
 	// 一次性将评论表的某一新闻的评论数同步到新闻表中
 	@Override
 	public void syncCommentCount() {
+		// 同步到数据库
 		this.baseMapper.syncCommentsCount();
 		log.info("评论数已同步到新闻表中");
+		// 删除redis缓存
+		Long deleted = redisUtil.deleteByPrefix(RedisConstant.NEWS_DETAIL_PREFIX + "*");
+		log.info("已删除redis缓存中的新闻详情，删除数量：{}", deleted);
 	}
 
 
@@ -145,7 +149,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
 
 		try {
 			// 执行分页查询
-			IPage<Comment> commentPages = page(page, wrapper);
+			IPage<Comment> commentPages = this.page(page, wrapper);
 			List<Comment> comments = commentPages.getRecords();
 
 			// 转换为CommentVo列表并获取用户ID集合
@@ -197,7 +201,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
 	private List<CommentVo> convertToCommentVos(List<Comment> comments) {
 		return comments.stream()
 				.map(CommentVo::new)
-				.collect(Collectors.toList());
+				.toList();
 	}
 
 	private Set<Long> extractUserIds(List<CommentVo> commentVos) {

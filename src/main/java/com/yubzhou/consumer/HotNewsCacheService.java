@@ -1,6 +1,7 @@
 package com.yubzhou.consumer;
 
 import com.yubzhou.common.HotNewsActionTracker;
+import com.yubzhou.common.MinAndMaxId;
 import com.yubzhou.common.RedisConstant;
 import com.yubzhou.common.UserActionEvent;
 import com.yubzhou.model.po.News;
@@ -66,7 +67,7 @@ public class HotNewsCacheService {
 	private final List<HotNews> HOT_NEWS_WEEK_CACHE_TOP10 = new CopyOnWriteArrayList<>();
 
 	// 同步新闻元数据
-	public void setMinAndMaxId(NewsService.MinAndMaxId minAndMaxId) {
+	public void setMinAndMaxId(MinAndMaxId minAndMaxId) {
 		synchronized (NEWS_META) {
 			NEWS_META.put("minAndMaxId", minAndMaxId);
 		}
@@ -97,8 +98,8 @@ public class HotNewsCacheService {
 	}
 
 	// 获取新闻元数据
-	public NewsService.MinAndMaxId getMinAndMaxId() {
-		return (NewsService.MinAndMaxId) NEWS_META.get("minAndMaxId");
+	public MinAndMaxId getMinAndMaxId() {
+		return (MinAndMaxId) NEWS_META.get("minAndMaxId");
 	}
 
 	// 获取1小时热点缓存
@@ -120,7 +121,7 @@ public class HotNewsCacheService {
 	// 刷新新闻元数据缓存
 	@Scheduled(cron = "0 0 0 * * ?") // 每天0点整执行一次
 	public void loadCacheNewsMeta() {
-		NewsService.MinAndMaxId minAndMaxId = newsService.findMinAndMaxId();
+		MinAndMaxId minAndMaxId = newsService.getMinAndMaxId();
 		if (minAndMaxId == null) return;
 		redisUtil.hmset(RedisConstant.NEWS_META,
 				Map.of("minId", minAndMaxId.getMinId(), "maxId", minAndMaxId.getMaxId()));
@@ -251,16 +252,14 @@ public class HotNewsCacheService {
 			log.info("1小时热点新闻缓存已满，跳过随机新闻加入");
 			return;
 		}
-		NewsService.MinAndMaxId minAndMaxId = getMinAndMaxId();
+		MinAndMaxId minAndMaxId = getMinAndMaxId();
 		int needSize = 10 - (int) size;
 		Set<Long> candidateIds = new HashSet<>(15); // 最大needSize为10，设置初始容量为15 防止扩容
 		while (candidateIds.size() <= needSize) {
 			Long newsId = RANDOM.nextLong(minAndMaxId.getMinId(), minAndMaxId.getMaxId() + 1);
 			candidateIds.add(newsId);
 		}
-		candidateIds.forEach(newsId -> {
-			hotNewsService.asyncUpdateMetricsAndHotness(new UserActionEvent(newsId, 0L, UserActionEvent.ActionType.VIEW, System.currentTimeMillis()));
-		});
+		candidateIds.forEach(newsId -> hotNewsService.asyncUpdateMetricsAndHotness(new UserActionEvent(newsId, 0L, UserActionEvent.ActionType.VIEW, System.currentTimeMillis())));
 		log.info("随机加入{}个新闻到1小时热点新闻缓存", needSize);
 	}
 

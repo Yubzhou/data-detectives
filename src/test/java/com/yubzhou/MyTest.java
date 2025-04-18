@@ -1,5 +1,6 @@
 package com.yubzhou;
 
+import com.yubzhou.common.MinAndMaxId;
 import com.yubzhou.common.ReturnCode;
 import com.yubzhou.common.UserActionEvent;
 import com.yubzhou.exception.BusinessException;
@@ -318,10 +319,10 @@ public class MyTest {
 	@Test
 	public void test21() throws Exception {
 		Map<String, Object> map = new HashMap<>();
-		map.put("minAndMaxId", new NewsService.MinAndMaxId(1L, 100L));
+		map.put("minAndMaxId", new MinAndMaxId(1L, 100L));
 		System.out.println(map.get("minAndMaxId"));
 		System.out.println(map.get("minAndMaxId").getClass());
-		NewsService.MinAndMaxId minAndMaxId = (NewsService.MinAndMaxId) map.get("minAndMaxId");
+		MinAndMaxId minAndMaxId = (MinAndMaxId) map.get("minAndMaxId");
 		System.out.println(minAndMaxId.getMinId());
 		System.out.println(minAndMaxId.getMaxId());
 	}

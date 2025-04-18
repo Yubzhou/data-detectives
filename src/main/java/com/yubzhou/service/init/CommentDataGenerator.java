@@ -1,10 +1,13 @@
 package com.yubzhou.service.init;
 
 import com.hankcs.hanlp.HanLP;
+import com.yubzhou.common.MinAndMaxId;
 import com.yubzhou.model.po.Comment;
 import com.yubzhou.model.po.News;
 import com.yubzhou.service.CommentService;
 import com.yubzhou.service.NewsService;
+import com.yubzhou.service.UserService;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -19,18 +22,30 @@ import java.util.Random;
 @Slf4j
 public class CommentDataGenerator {
 
+	private final UserService userService;
 	private final NewsService newsService;
 	private final CommentService commentService;
 
 	// 配置参数
 	private static final int MIN_COMMENTS_PER_NEWS = 5; // 最小评论数量
 	private static final int MAX_COMMENTS_PER_NEWS = 20; // 最大评论数量
-	private static final int USER_ID_MIN = 637; // 最小用户ID
-	private static final int USER_ID_MAX = 933; // 最大用户ID
+	private static long USER_ID_MIN; // 最小用户ID
+	private static long USER_ID_MAX; // 最大用户ID
 	private static final int HIGH_LIKES_MIN = 10; // 最小高点赞数量
 	private static final int HIGH_LIKES_MAX = 50; // 最大高点赞数量
 	private static final int LOW_LIKES_MAX = 10; // 最大低点赞数量
 	private static final double MAIN_OPINION_RATIO = 0.7; // 主观观点比例
+
+	// 通过 @PostConstruct 初始化依赖项
+	@PostConstruct
+	private void init() {
+		MinAndMaxId minAndMaxId = userService.getMinAndMaxId();
+		// USER_ID_MIN = minAndMaxId.getMinId();
+		USER_ID_MIN = 97L;
+		USER_ID_MAX = minAndMaxId.getMaxId();
+
+		log.info("User ID Range initialized: [{}-{}]", USER_ID_MIN, USER_ID_MAX);
+	}
 
 	private static final Random RANDOM = new Random();
 
@@ -161,7 +176,7 @@ public class CommentDataGenerator {
 	}
 
 	private Long getRandomUserId() {
-		return (long) (USER_ID_MIN + RANDOM.nextInt(USER_ID_MAX - USER_ID_MIN + 1));
+		return USER_ID_MIN + RANDOM.nextLong(USER_ID_MAX - USER_ID_MIN + 1);
 	}
 
 	// 修改后的评论生成方法
