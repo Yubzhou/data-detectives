@@ -209,6 +209,14 @@ public class HotNewsService {
 		});
 	}
 
+	// 从redis中获取用户收藏的新闻
+	public List<News> getFavoriteNews(long userId) {
+		String actionKey = RedisConstant.USER_NEWS_ACTION_PREFIX + userId + ":" + ActionType.FAVORITE.getField();
+		Set<Long> favoriteNewsIds = TypeConverter.convert(redisUtil.sGet(actionKey), Long.class, HashSet::new);
+		if (CollectionUtils.isEmpty(favoriteNewsIds)) return Collections.emptyList();
+		return favoriteNewsIds.stream().map(this::getNews).toList();
+	}
+
 	// 异步执行数据库更新
 	private void updateMetricsToMySQL(String newsKey, UserActionEvent event) {
 		try {

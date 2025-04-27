@@ -68,6 +68,19 @@ public class NewsController {
 				});
 	}
 
+	// 获取收藏新闻列表
+	@GetMapping("/favorite")
+	public Result<List<NewsVo>> getFavoriteNews() {
+		long userId = WebContextUtil.getCurrentUserId();
+		List<News> newsList = hotNewsService.getFavoriteNews(userId);
+		if (CollectionUtils.isEmpty(newsList)) {
+			return Result.success(Collections.emptyList());
+		}
+		// 构建NewsVo列表
+		List<NewsVo> newsVoList = hotNewsCacheService.buildNewsVoList(null, newsList, userId);
+		return Result.success(newsVoList);
+	}
+
 	// 新闻搜索（根据新闻标题）
 	@GetMapping("/search")
 	public Result<List<NewsVo>> search(@RequestParam("keyword") String keyword) {
@@ -76,11 +89,8 @@ public class NewsController {
 		if (CollectionUtils.isEmpty(newsList)) {
 			return Result.success(Collections.emptyList());
 		}
-		List<Long> newsIds = newsList.stream().map(News::getId).toList();
-		// 添加用户新闻操作
-		List<NewsVo> newsVoList = hotNewsCacheService.addUserNewsActions(newsIds, newsList, userId);
-		// 添加新闻分类标签
-		hotNewsCacheService.addCategories(newsIds, newsVoList);
+		// 构建NewsVo列表
+		List<NewsVo> newsVoList = hotNewsCacheService.buildNewsVoList(null, newsList, userId);
 		return Result.success(newsVoList);
 	}
 
@@ -92,10 +102,8 @@ public class NewsController {
 		if (news == null) {
 			return Result.fail(ReturnCode.RC404.getCode(), "新闻不存在", null);
 		}
-		// 添加用户新闻操作
-		NewsVo newsVo = hotNewsCacheService.addUserNewsActions(List.of(newsId), List.of(news), userId).get(0);
-		// 添加新闻分类标签
-		hotNewsCacheService.addCategories(List.of(newsId), List.of(newsVo));
+		// 构建NewsVo
+		NewsVo newsVo = hotNewsCacheService.buildNewsVoList(List.of(newsId), List.of(news), userId).get(0);
 		return Result.success(newsVo);
 	}
 }

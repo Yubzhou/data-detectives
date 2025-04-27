@@ -178,7 +178,23 @@ UPDATE `news`
 SET `comments` = 0
 WHERE `opposes` = 0;
 
+-- 清空评论表
+TRUNCATE TABLE `comments`;
 
+-- 删除指定用户的全部评论
+DELETE
+FROM `comments`
+WHERE `user_id` = 95;
+
+-- 获取评论数最多的前10名用户
+SELECT `user_id`,
+       COUNT(*) AS `comment_count`
+FROM `comments`
+GROUP BY `user_id`
+ORDER BY `comment_count` DESC
+LIMIT 10;
+
+-- 统计指定新闻的评论数
 SELECT COUNT(*)
 FROM `comments`
 WHERE `news_id` = 70;
@@ -190,7 +206,18 @@ SET `n`.`comments` = (SELECT COUNT(*)
                       WHERE `c`.`news_id` = `n`.`id`);
 
 -- 删除用户id大于394的评论
-DELETE FROM `comments` WHERE `user_id` > 394;
+DELETE
+FROM `comments`
+WHERE `user_id` > 394;
+
+
+-- 新闻收藏表
+CREATE TABLE IF NOT EXISTS `news_favorites`
+(
+    `user_id` BIGINT UNSIGNED NOT NULL COMMENT '用户ID',
+    `news_id` BIGINT UNSIGNED NOT NULL COMMENT '新闻ID',
+    PRIMARY KEY (`user_id`, `news_id`)
+) COMMENT '用户-新闻关联表';
 
 
 -- 用户-新闻关联表（多对多关系）

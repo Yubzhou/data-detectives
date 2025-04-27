@@ -373,10 +373,8 @@ public class HotNewsCacheService {
 				// 更新新闻ID集合
 				newsIds = newsList.stream().map(News::getId).toList();
 			}
-			// 添加用户新闻操作
-			List<NewsVo> result = addUserNewsActions(newsIds, newsList, userId);
-			// 添加新闻分类标签
-			addCategories(newsIds, result);
+			// 构建NewsVoList
+			List<NewsVo> result = buildNewsVoList(newsIds, newsList, userId);
 			return CompletableFuture.completedFuture(result);
 		} catch (Exception e) {
 			log.error("Async recommendation failed for user {}", userId, e);
@@ -407,7 +405,21 @@ public class HotNewsCacheService {
 		return newsList;
 	}
 
-	public List<NewsVo> addUserNewsActions(List<Long> newsIds, List<News> newsList, long userId) {
+	// 将newsList转为NewsVoList
+	public List<NewsVo> buildNewsVoList(List<Long> newsIds, List<News> newsList, long userId) {
+		// 如果newsIds为空，则使用newsList中的新闻ID
+		if (CollectionUtils.isEmpty(newsIds)) {
+			newsIds = newsList.stream().map(News::getId).toList();
+		}
+		// 添加用户新闻操作
+		List<NewsVo> NewsVoList = addUserNewsActions(newsIds, newsList, userId);
+		// 添加新闻分类标签
+		addCategories(newsIds, NewsVoList);
+		return NewsVoList;
+	}
+
+	// 添加用户新闻操作
+	private List<NewsVo> addUserNewsActions(List<Long> newsIds, List<News> newsList, long userId) {
 		// 获取用户对新闻的操作（比如格式为新闻ID：true）
 		Map<String, Map<Object, Boolean>> actionMap = hotNewsService.getUserNewsAction(newsIds.toArray(), userId);
 		return newsList.stream()
@@ -415,7 +427,8 @@ public class HotNewsCacheService {
 				.toList();
 	}
 
-	public void addCategories(List<Long> newsIds, List<NewsVo> newsVoList) {
+	// 添加新闻分类标签
+	private void addCategories(List<Long> newsIds, List<NewsVo> newsVoList) {
 		Map<Long, List<String>> newsCategoryRelationMap = newsCategoryRelationService.getNewsCategoryRelationMap(newsIds);
 		for (NewsVo newsVo : newsVoList) {
 			List<String> categories = newsCategoryRelationMap.get(newsVo.getNews().getId());

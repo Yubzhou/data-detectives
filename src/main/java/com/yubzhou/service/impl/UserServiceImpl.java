@@ -82,17 +82,21 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 	 */
 	@Override
 	public Map<String, String> loginWithPassword(User loginUser, HttpServletRequest request) {
-		// // 构造查询条件
-		// LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
-		// queryWrapper
-		// 		.select(User::getPhone, User::getPassword, User::getRole) // 只查询手机号、密码、角色
-		// 		.eq(User::getPhone, loginUser.getPhone()); // 根据手机号查询
-		// User user = this.getOne(queryWrapper); // 获取查询结果
+		// 查询用户
 		User user = this.findByPhone(loginUser.getPhone());
 		// 验证手机号是否存在，以及密码是否正确
 		if (user == null) throw new BusinessException(ReturnCode.USER_NOT_FOUND); // 账号不存在
-		if (!BCryptUtil.matches(loginUser.getPassword(), user.getPassword()))
-			throw new BusinessException(ReturnCode.PASSWORD_ERROR); // 登录失败
+
+		// Yubzhou TODO 2025/4/27 21:50; 测试手机号直接跳过：两个密码（NFact1234、FakeEye1234）
+		if (loginUser.getPhone().equals("18607912978")) {
+			// 测试手机号直接跳过：两个密码（NFact1234、FakeEye1234）
+			if (!loginUser.getPassword().equals("NFact1234") && !loginUser.getPassword().equals("FakeEye1234")) {
+				throw new BusinessException(ReturnCode.PASSWORD_ERROR);
+			}
+		} else {
+			if (!BCryptUtil.matches(loginUser.getPassword(), user.getPassword()))
+				throw new BusinessException(ReturnCode.PASSWORD_ERROR); // 登录失败
+		}
 
 		// 检查账号状态，如果非正常状态，则抛出异常
 		checkUserStatus(user);

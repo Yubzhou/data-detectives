@@ -5,13 +5,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 @SpringBootTest
-class CommentDataGeneratorTest {
+class CommentDataGeneratorV1Test {
 
 	@Autowired
-	private CommentDataGenerator commentDataGenerator;
+	private CommentDataGeneratorV1 commentDataGenerator;
 	@Autowired
 	private CommentService commentService;
 
@@ -25,5 +23,6 @@ class CommentDataGeneratorTest {
 	public void testSyncCommentCount() {
 		commentService.syncCommentCount();
 	}
+
 
 }
