@@ -1,6 +1,7 @@
 package com.yubzhou.service.impl;
 
 import com.yubzhou.service.UserProfileService;
+import com.yubzhou.util.WebContextUtil;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -18,7 +19,8 @@ class UserProfileServiceImplTest {
 
 	@Test
 	public void getUserProfile() throws Exception {
-		System.out.println(userProfileService.getProfileByUserId());
+		long userId = WebContextUtil.getCurrentUserId();
+		System.out.println(userProfileService.getProfileByUserId(userId));
 	}
 
 	@Test
@@ -27,6 +29,11 @@ class UserProfileServiceImplTest {
 		interests.add("游戏");
 		interests.add("新闻");
 		userProfileService.updateInterests(interests);
+	}
+
+	@Test
+	public void deleteUnusedAvatarFiles() throws Exception {
+		userProfileService.deleteUnusedAvatarFiles();
 	}
 
 }

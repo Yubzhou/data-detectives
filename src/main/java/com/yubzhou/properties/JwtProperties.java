@@ -2,10 +2,12 @@ package com.yubzhou.properties;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @Getter
 @Setter
+@ToString
 @ConfigurationProperties(prefix = "myapp.jwt")
 public class JwtProperties {
 	private String secretKey; // 加密密钥

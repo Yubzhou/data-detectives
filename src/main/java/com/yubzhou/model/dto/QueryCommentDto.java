@@ -23,7 +23,6 @@ public class QueryCommentDto {
 
 	public enum SortBy {
 		TIME, // 时间
-		LIKES, // 点赞数
-		;
+		LIKES // 点赞数
 	}
 }

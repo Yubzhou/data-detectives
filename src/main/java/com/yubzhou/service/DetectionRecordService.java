@@ -5,8 +5,6 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.yubzhou.model.po.DetectionRecord;
 import com.yubzhou.model.vo.DetectionStatsVo;
 
-import java.time.LocalDateTime;
-
 public interface DetectionRecordService extends IService<DetectionRecord> {
 
 	IPage<DetectionRecord> queryByUnionIndex(

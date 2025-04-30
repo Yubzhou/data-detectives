@@ -27,6 +27,10 @@ CREATE TABLE IF NOT EXISTS `user_profiles`
     UNIQUE KEY `uniq_user` (`user_id`)
 ) COMMENT '用户信息表';
 
+-- 筛选出去重后的头像地址
+SELECT DISTINCT `avatar_url`
+FROM `user_profiles`;
+
 -- 设置用户头像为默认头像（/default/default_avatar.png）
 # UPDATE `user_profiles` SET `avatar_url` = '/default/default_avatar.png' WHERE `avatar_url` IS NULL;
 

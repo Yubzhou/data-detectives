@@ -1,6 +1,5 @@
 package com.yubzhou.model.vo;
 
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -8,7 +7,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class DetectionStatsVo {
+public class AchievementVo {
 	// 检测总次数
 	private Integer totalDetections;
 
@@ -16,8 +15,8 @@ public class DetectionStatsVo {
 	private Integer maxContinuousDays;
 
 	// 用户评论总数
-	private Integer commentCount;
+	Integer totalComments;
 
 	// 用户检测记录中真新闻占比
-
+	Double trueNewsDetectionRatio;
 }

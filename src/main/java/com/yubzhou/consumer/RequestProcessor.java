@@ -13,8 +13,13 @@ import org.springframework.stereotype.Component;
 @Component
 @Slf4j
 public class RequestProcessor {
+
+	private final KafkaTemplate<String, Object> kafkaTemplate;
+
 	@Autowired
-	private KafkaTemplate<String, Object> kafkaTemplate;
+	public RequestProcessor(KafkaTemplate<String, Object> kafkaTemplate) {
+		this.kafkaTemplate = kafkaTemplate;
+	}
 
 	@KafkaListener(topics = KafkaConstant.REQUEST_TOPIC, groupId = KafkaConstant.REQUEST_GROUP_ID)
 	public void handleRequest(@Header(KafkaHeaders.RECEIVED_KEY) String requestId,

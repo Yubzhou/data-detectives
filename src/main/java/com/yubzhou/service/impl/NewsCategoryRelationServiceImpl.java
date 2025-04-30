@@ -6,7 +6,7 @@ import com.yubzhou.mapper.NewsCategoryRelationMapper;
 import com.yubzhou.model.po.NewsCategoryRelation;
 import com.yubzhou.service.NewsCategoryRelationService;
 import com.yubzhou.service.NewsCategoryService;
-import com.yubzhou.util.RedisUtil;
+import com.yubzhou.service.NewsService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
@@ -17,7 +17,10 @@ import org.springframework.data.redis.core.SetOperations;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
@@ -28,11 +31,13 @@ public class NewsCategoryRelationServiceImpl
 
 	private final RedisTemplate<String, Object> redisTemplate;
 	private final NewsCategoryService newsCategoryService;
+	private final NewsService newsService;
 
 	@Autowired
-	public NewsCategoryRelationServiceImpl(RedisTemplate<String, Object> redisTemplate, RedisUtil redisUtil, NewsCategoryService newsCategoryService) {
+	public NewsCategoryRelationServiceImpl(RedisTemplate<String, Object> redisTemplate, NewsCategoryService newsCategoryService, NewsService newsService) {
 		this.redisTemplate = redisTemplate;
 		this.newsCategoryService = newsCategoryService;
+		this.newsService = newsService;
 	}
 
 	// 获取某个新闻的分类列表
@@ -127,5 +132,23 @@ public class NewsCategoryRelationServiceImpl
 		}
 
 		return result;
+	}
+
+	/**
+	 * 获取指定类别的新闻总数
+	 *
+	 * @param categoryId 新闻类别ID（当ID为0表示任意新闻类别）
+	 * @return 指定新闻类别的新闻总数
+	 */
+	@Override
+	public long getNewsCount(long categoryId) {
+		// 当 categoryId 为 0 时，表示查询所有新闻类别的新闻总数
+		if (categoryId == 0) {
+			return newsService.count();
+		}
+		// 否则查询指定类别的新闻总数
+		return this.lambdaQuery()
+				.eq(NewsCategoryRelation::getCategoryId, categoryId)
+				.count();
 	}
 }

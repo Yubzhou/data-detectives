@@ -7,7 +7,9 @@ import com.yubzhou.model.dto.RegisterUserProfileDto;
 import com.yubzhou.model.dto.UpdateUserPasswordDto;
 import com.yubzhou.model.po.UserProfile;
 import com.yubzhou.model.vo.UserProfileVo;
+import com.yubzhou.properties.FileUploadProperties;
 import com.yubzhou.service.UserProfileService;
+import com.yubzhou.util.WebContextUtil;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
@@ -18,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.Set;
 
 @RestController
@@ -27,15 +30,18 @@ import java.util.Set;
 public class UserProfileController {
 
 	private final UserProfileService userProfileService;
+	private final FileUploadProperties fileUploadProperties;
 
 	@Autowired
-	public UserProfileController(UserProfileService userProfileService) {
+	public UserProfileController(UserProfileService userProfileService, FileUploadProperties fileUploadProperties) {
 		this.userProfileService = userProfileService;
+		this.fileUploadProperties = fileUploadProperties;
 	}
 
 	@GetMapping("")
 	public Result<?> getProfileByUserId() {
-		UserProfileVo profile = userProfileService.getProfileByUserId();
+		long userId = WebContextUtil.getCurrentUserId();
+		UserProfileVo profile = userProfileService.getProfileByUserId(userId);
 		if (profile == null) {
 			return Result.fail(ReturnCode.USER_NOT_FOUND.getCode(), "获取个人信息失败：账号不存在");
 		}
@@ -52,6 +58,7 @@ public class UserProfileController {
 		return Result.successWithMessage("更新个人信息成功");
 	}
 
+	// 更新感兴趣领域
 	@PostMapping("/interests")
 	public Result<Void> updateInterests(@RequestParam("interests")
 										@NotEmpty(message = "感兴趣领域不能为空")
@@ -61,15 +68,18 @@ public class UserProfileController {
 		return Result.successWithMessage("更新感兴趣领域成功");
 	}
 
+	// 更换头像
 	@PostMapping("/avatar")
 	public Result<Void> updateAvatarUrl(@RequestParam("avatarUrl")
 										@NotBlank(message = "头像url不能为空")
-										String avatarUrl) {
+										String avatarUrl) throws IOException {
+		long userId = WebContextUtil.getCurrentUserId();
 		// 保存到数据库
-		userProfileService.updateAvatarUrl(avatarUrl);
+		userProfileService.updateAvatarUrl(avatarUrl, userId);
 		return Result.successWithMessage("更新头像成功");
 	}
 
+	// 更新昵称
 	@PostMapping("/nickname")
 	public Result<Void> updateNickname(@RequestParam("nickname")
 									   @Length(min = 2, max = 15, message = "昵称长度必须在2-15之间")
@@ -79,6 +89,7 @@ public class UserProfileController {
 		return Result.successWithMessage("修改昵称成功");
 	}
 
+	// 更新密码
 	@PostMapping("/password")
 	public Result<Void> updatePassword(@Valid @RequestBody UpdateUserPasswordDto dto) {
 		// 保存到数据库
@@ -86,6 +97,7 @@ public class UserProfileController {
 		return Result.successWithMessage("修改密码成功");
 	}
 
+	// 更换手机号
 	@PostMapping("/phone")
 	public Result<Void> updatePhone(@RequestParam("phone")
 									@Pattern(regexp = RegexpConstant.PHONE, message = RegexpConstant.PHONE_MESSAGE)

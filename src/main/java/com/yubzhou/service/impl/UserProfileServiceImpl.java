@@ -9,25 +9,38 @@ import com.yubzhou.model.dto.UpdateUserPasswordDto;
 import com.yubzhou.model.po.User;
 import com.yubzhou.model.po.UserProfile;
 import com.yubzhou.model.vo.UserProfileVo;
+import com.yubzhou.properties.FileUploadProperties;
 import com.yubzhou.service.UserProfileService;
 import com.yubzhou.service.UserService;
+import com.yubzhou.util.PathUtil;
 import com.yubzhou.util.WebContextUtil;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.*;
 
 @Service
+@Slf4j
 public class UserProfileServiceImpl extends ServiceImpl<UserProfileMapper, UserProfile> implements UserProfileService {
 
 	private final UserService userService;
+	private final FileUploadProperties fileUploadProperties;
+	private final ThreadPoolTaskExecutor globalTaskExecutor;
 
 	@Autowired
-	public UserProfileServiceImpl(UserService userService) {
+	public UserProfileServiceImpl(UserService userService,
+								  FileUploadProperties fileUploadProperties,
+								  @Qualifier("globalTaskExecutor") ThreadPoolTaskExecutor globalTaskExecutor) {
 		this.userService = userService;
+		this.fileUploadProperties = fileUploadProperties;
+		this.globalTaskExecutor = globalTaskExecutor;
 	}
 
 	// 随机生成一个可重复的昵称（字母+数字）
@@ -44,8 +57,7 @@ public class UserProfileServiceImpl extends ServiceImpl<UserProfileMapper, UserP
 	}
 
 	@Override
-	public UserProfileVo getProfileByUserId() {
-		long userId = WebContextUtil.getCurrentUserId();
+	public UserProfileVo getProfileByUserId(Long userId) {
 		UserProfile profile = this.lambdaQuery()
 				.select(UserProfile::getId, UserProfile::getUserId, UserProfile::getNickname, UserProfile::getGender,
 						UserProfile::getAvatarUrl, UserProfile::getInterestedFields)
@@ -83,11 +95,109 @@ public class UserProfileServiceImpl extends ServiceImpl<UserProfileMapper, UserP
 		this.updateUserProfileByUserId(userProfile, null);
 	}
 
+	private String getAvatarUrlByUserId(long userId) {
+		UserProfile profile = this.lambdaQuery()
+				.select(UserProfile::getAvatarUrl)
+				.eq(UserProfile::getUserId, userId)
+				.last("LIMIT 1")
+				.one();
+		return profile.getAvatarUrl();
+	}
+
+	// 从url中提取文件名
+	public String getFileNameFromUrl(String url) {
+		if (url == null) return null;
+		// 以字符串的最后一个 / 为分界
+		int lastSlashIndex = url.lastIndexOf("/");
+		if (lastSlashIndex != -1 && lastSlashIndex < url.length() - 1) {
+			return url.substring(lastSlashIndex + 1);
+		} else {
+			return null;
+		}
+	}
+
+	// 异步删除旧头像
+	private void deleteOldAvatar(Long userId) {
+		globalTaskExecutor.execute(() -> {
+			// 查询数据库获取用户旧头像
+			String avatarUrl = getAvatarUrlByUserId(userId);
+			if (!StringUtils.hasText(avatarUrl)) {
+				log.info("用户旧头像为空，无需删除");
+				return;
+			}
+			if (avatarUrl.startsWith("/default/avatar/")) {
+				log.info("用户旧头像为系统内置默认头像，无需删除");
+				return;
+			}
+
+			String fileName = getFileNameFromUrl(avatarUrl);
+			if (fileName != null) {
+				// 删除旧头像
+				try {
+					Path filePath = PathUtil.getExternalPath(fileUploadProperties.getImage().getUploadDir())
+							.resolve(fileName).normalize();
+					PathUtil.deleteFileOrDirectory(filePath);
+				} catch (IOException e) {
+					log.error("删除旧头像失败", e);
+				}
+			} else {
+				log.warn("用户头像 URL 格式错误：{}", avatarUrl);
+			}
+		});
+	}
+
+	// 将上传的头像文件从临时目录移动到上传目录
+	private void moveAvatar(String avatarUrl) {
+		Path source = PathUtil.getExternalPath(fileUploadProperties.getImage().getTempDir())
+				.resolve(getFileNameFromUrl(avatarUrl)).normalize();
+		Path targetDir = PathUtil.getExternalPath(fileUploadProperties.getImage().getUploadDir());
+		try {
+			PathUtil.moveFile(source, targetDir);
+		} catch (IOException e) {
+			log.error("移动上传头像文件失败", e);
+		}
+	}
+
 	@Override
-	public void updateAvatarUrl(String avatarUrl) {
+	public void updateAvatarUrl(String avatarUrl, Long userId) {
+		// 异步删除旧头像
+		deleteOldAvatar(userId);
+		// 将上传的头像文件从临时目录移动到上传目录
+		moveAvatar(avatarUrl);
 		LambdaUpdateWrapper<UserProfile> wrapper = new LambdaUpdateWrapper<>();
 		wrapper.set(UserProfile::getAvatarUrl, avatarUrl);
 		this.updateUserProfileByUserId(wrapper);
+	}
+
+	// 删除未引用的头像文件
+	@Override
+	public Map<String, Integer> deleteUnusedAvatarFiles() {
+		// 查询数据库中所有头像 URL（去重之后的）
+		Set<String> dbUrls = this.baseMapper.selectDistinctAvatarUrls();
+
+		// 要删除文件的目录：上传头像的目录
+		final Path avatarBaseDir = PathUtil.getExternalPath(fileUploadProperties.getImage().getUploadDir());
+
+		// 要保留的文件名集合
+		Set<String> toKeep = new HashSet<>();
+		String fileName;
+		for (String url : dbUrls) {
+			// 跳过 系统内置默认头像
+			if (url.startsWith("/default/avatar/")) continue;
+			fileName = getFileNameFromUrl(url);
+			if (fileName != null) {
+				toKeep.add(fileName);
+			}
+		}
+
+		// toKeep.forEach(System.out::println);
+
+		// 删除未引用的头像文件
+		Map<String, Integer> stat = PathUtil.deleteFilesWithFileName(avatarBaseDir, toKeep);
+		// 输出统计信息：总计，已删除文件数量，删除失败文件个数，剩余文件数量
+		log.info("删除未引用的头像文件统计信息：总计={}, 已删除={}, 删除失败={}, 剩余={}",
+				stat.get("total"), stat.get("success"), stat.get("fail"), stat.get("total") - stat.get("success"));
+		return stat;
 	}
 
 	@Override

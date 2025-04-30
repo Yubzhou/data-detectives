@@ -4,7 +4,6 @@ package com.yubzhou.model.dto;
 import com.yubzhou.common.RegexpConstant;
 import com.yubzhou.model.po.User;
 import com.yubzhou.validator.FieldMatch;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Data;

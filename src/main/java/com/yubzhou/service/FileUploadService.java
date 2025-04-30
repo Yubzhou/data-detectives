@@ -16,9 +16,9 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 public interface FileUploadService {
-	CompletableFuture<UploadResult> uploadImage(MultipartFile[] files, Set<MediaType> allowedTypes);
+	CompletableFuture<UploadResult> uploadImage(MultipartFile[] files, Set<MediaType> allowedTypes, String relativeUploadDir);
 
-	CompletableFuture<UploadResult> uploadImages(MultipartFile[] files, Set<MediaType> allowedTypes);
+	CompletableFuture<UploadResult> uploadImages(MultipartFile[] files, Set<MediaType> allowedTypes, String relativeUploadDir);
 
 	CompletableFuture<UploadResult> uploadJson(MultipartFile[] files, Set<MediaType> allowedTypes);
 

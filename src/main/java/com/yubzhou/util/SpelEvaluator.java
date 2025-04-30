@@ -19,8 +19,12 @@ import java.util.concurrent.ConcurrentHashMap;
 public class SpelEvaluator {
 
 	// 注入需要的BeanFactory等资源
+	private final BeanFactory beanFactory;
+
 	@Autowired
-	private BeanFactory beanFactory;
+	public SpelEvaluator(BeanFactory beanFactory) {
+		this.beanFactory = beanFactory;
+	}
 
 	// 缓存配置（最大1000条目，LRU策略）
 	private static final int MAX_CACHE_SIZE = 1000;

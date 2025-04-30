@@ -1,6 +1,5 @@
 package com.yubzhou.controller;
 
-import com.yubzhou.annotation.JwtIgnore;
 import com.yubzhou.service.SseAsyncService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;

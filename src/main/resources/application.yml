@@ -318,6 +318,8 @@ file-upload:
     upload-dir: ./uploads/images # 与项目目录同级的 uploads/images 目录
     # 配置图片访问路径
     access-url: /uploads/images/ # 图片访问路径
+    # 配置图片上述临时路径（防止用户更换头像时产生的未引用图片导致的存储浪费问题）
+    temp-dir: ./temp/images
   json:
     # 配置json上传路径
     upload-dir: ./uploads/json # 与项目目录同级的 uploads/json 目录

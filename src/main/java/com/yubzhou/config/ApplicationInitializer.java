@@ -1,6 +1,7 @@
 package com.yubzhou.config;
 
 import com.yubzhou.consumer.HotNewsCacheService;
+import com.yubzhou.scheduler.FileCleanupScheduler;
 import com.yubzhou.service.NewsCategoryRelationService;
 import com.yubzhou.service.NewsCategoryService;
 import lombok.RequiredArgsConstructor;
@@ -15,13 +16,17 @@ public class ApplicationInitializer implements ApplicationRunner {
 	private final HotNewsCacheService hotNewsCacheService;
 	private final NewsCategoryService newsCategoryService;
 	private final NewsCategoryRelationService newsCategoryRelationService;
+	private final FileCleanupScheduler fileCleanupScheduler;
 
 	@Override
 	public void run(ApplicationArguments args) throws Exception {
 		// 加载缓存
 		loadCache();
+		// 清空临时文件
+		clearTempFiles();
 	}
 
+	// 加载缓存
 	private void loadCache() {
 		// 加载新闻元数据（新闻最小ID和最大ID）
 		hotNewsCacheService.loadCacheNewsMeta();
@@ -31,5 +36,10 @@ public class ApplicationInitializer implements ApplicationRunner {
 		newsCategoryService.loadCacheNewsCategories();
 		// 从数据库中加载新闻分类关系缓存到redis中
 		newsCategoryRelationService.cacheAllNewsCategoryRelationToRedis();
+	}
+
+	// 清空临时文件
+	private void clearTempFiles() {
+		fileCleanupScheduler.cleanExpiredTempFiles();
 	}
 }

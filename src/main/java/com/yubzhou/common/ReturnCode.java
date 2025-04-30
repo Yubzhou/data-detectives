@@ -3,8 +3,8 @@ package com.yubzhou.common;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-@AllArgsConstructor
 @Getter
+@AllArgsConstructor
 public enum ReturnCode {
 	RC200(200, "请求成功"),
 	RC400(400, "请求参数错误或格式不正确"),

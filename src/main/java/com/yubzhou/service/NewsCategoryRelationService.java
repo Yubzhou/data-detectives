@@ -14,4 +14,5 @@ public interface NewsCategoryRelationService extends IService<NewsCategoryRelati
 	void cacheAllNewsCategoryRelationToRedis();
 
 	Map<Long, List<String>> getNewsCategoryRelationMap(List<Long> newsIds);
+	long getNewsCount(long categoryId);
 }

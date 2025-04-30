@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.SchedulingConfigurer;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
@@ -32,6 +33,7 @@ public class SchedulerConfig implements SchedulingConfigurer {
 	}
 
 	@Bean("schedulerTaskScheduler") // 指定 Bean 名称
+	@Primary                        // 标记为首选的，如果不指定@Qualifier，则默认注入该Bean
 	public ThreadPoolTaskScheduler schedulerTaskScheduler() {
 		return buildScheduler(schedulerProperties.getScheduler());
 	}

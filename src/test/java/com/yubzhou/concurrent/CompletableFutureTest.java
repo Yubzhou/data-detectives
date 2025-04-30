@@ -3,7 +3,6 @@ package com.yubzhou.concurrent;
 
 import org.junit.jupiter.api.Test;
 
-import java.sql.Time;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;

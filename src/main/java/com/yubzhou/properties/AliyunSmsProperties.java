@@ -3,10 +3,12 @@ package com.yubzhou.properties;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @Getter
 @Setter
+@ToString
 @ConfigurationProperties(prefix = "aliyun.sms")
 public class AliyunSmsProperties {
 	private String accessKeyId;

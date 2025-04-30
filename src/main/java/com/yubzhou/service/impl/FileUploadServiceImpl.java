@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -37,19 +38,19 @@ public class FileUploadServiceImpl implements FileUploadService {
 
 	// 上传单个图片（异步）
 	@Override
-	public CompletableFuture<UploadResult> uploadImage(MultipartFile[] files, Set<MediaType> allowedTypes) {
+	public CompletableFuture<UploadResult> uploadImage(MultipartFile[] files, Set<MediaType> allowedTypes, String relativeUploadDir) {
 		if (files != null && files.length != 1) {
 			throw new BusinessException(ReturnCode.RC400.getCode(), "仅支持单个文件上传");
 		}
 		// 异步上传图片
-		return CompletableFuture.supplyAsync(() -> uploadImageHandler(files, allowedTypes), uploadTaskExecutor);
+		return CompletableFuture.supplyAsync(() -> uploadImageHandler(files, allowedTypes, relativeUploadDir), uploadTaskExecutor);
 	}
 
 	// 上传多个图片（异步）
 	@Override
-	public CompletableFuture<UploadResult> uploadImages(MultipartFile[] files, Set<MediaType> allowedTypes) {
+	public CompletableFuture<UploadResult> uploadImages(MultipartFile[] files, Set<MediaType> allowedTypes, String relativeUploadDir) {
 		// 异步上传图片
-		return CompletableFuture.supplyAsync(() -> uploadImageHandler(files, allowedTypes), uploadTaskExecutor);
+		return CompletableFuture.supplyAsync(() -> uploadImageHandler(files, allowedTypes, relativeUploadDir), uploadTaskExecutor);
 	}
 
 	// 上传JSON文件（异步）
@@ -61,9 +62,11 @@ public class FileUploadServiceImpl implements FileUploadService {
 		return CompletableFuture.supplyAsync(() -> uploadJsonHandler(files, allowedTypes), uploadTaskExecutor);
 	}
 
-	private UploadResult uploadImageHandler(MultipartFile[] files, Set<MediaType> allowedTypes) {
-		// 获取图片上传目录（相对路径）
-		String relativeUploadDir = fileUploadProperties.getImage().getUploadDir();
+	private UploadResult uploadImageHandler(MultipartFile[] files, Set<MediaType> allowedTypes, String relativeUploadDir) {
+		if (!StringUtils.hasText(relativeUploadDir)) {
+			// 如果relativeUploadDir为空，则使用默认的图片上传目录（相对路径）
+			relativeUploadDir = fileUploadProperties.getImage().getUploadDir();
+		}
 		return uploadHandler(files, allowedTypes, relativeUploadDir);
 	}
 
@@ -105,13 +108,11 @@ public class FileUploadServiceImpl implements FileUploadService {
 		Queue<UploadResult.SuccessInfo> successFiles = new ConcurrentLinkedQueue<>();
 		Queue<UploadResult.ErrorInfo> errorFiles = new ConcurrentLinkedQueue<>();
 
-		// // 获取图片上传目录（相对路径）
-		// String relativeUploadDir = fileUploadProperties.getImage().getUploadDir();
 		// 获取安全的绝对路径
 		Path uploadPath = PathUtil.getExternalPath(relativeUploadDir);
 
 		try {
-			// 创建多级目录
+			// 创建多级目录（如果目录已存在不会抛出异常）
 			Files.createDirectories(uploadPath);
 		} catch (IOException e) {
 			log.error("无法创建图片上传目录: {}", e.getMessage());

@@ -89,7 +89,7 @@ public class ReadWriteLockTest {
 
 		// 模拟多个读线程
 		for (int i = 0; i < 5; i++) {
-			new Thread(() -> test.readData(), "ReadThread-" + i).start();
+			new Thread(test::readData, "ReadThread-" + i).start();
 		}
 
 		// 模拟写线程

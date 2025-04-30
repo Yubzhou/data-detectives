@@ -1,8 +1,8 @@
 package com.yubzhou;
 
 public class Outer {
-	int x = 10;
-	int y = 20;
+	final int x = 10;
+	final int y = 20;
 	void method() {
 		int x = 30;
 		Runnable r = () -> {

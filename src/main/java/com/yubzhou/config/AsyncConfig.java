@@ -88,9 +88,7 @@ public class AsyncConfig implements AsyncConfigurer {
 	// 异步异常处理器
 	@Override
 	public AsyncUncaughtExceptionHandler getAsyncUncaughtExceptionHandler() {
-		return (ex, method, params) -> {
-			log.error("异步任务执行异常: {}.{}", method.getDeclaringClass().getSimpleName(), method.getName(), ex);
-		};
+		return (ex, method, params) -> log.error("异步任务执行异常: {}.{}", method.getDeclaringClass().getSimpleName(), method.getName(), ex);
 	}
 
 	// 文件上传使用自定义拒绝策略：记录日志后丢弃

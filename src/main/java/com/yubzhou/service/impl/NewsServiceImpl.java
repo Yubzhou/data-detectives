@@ -127,7 +127,7 @@ public class NewsServiceImpl extends ServiceImpl<NewsMapper, News> implements Ne
 
 		// 2. 根据是否指定了分类ID，计算出可获取的新闻总数
 		// （因为指定了分类ID，则去redis中获取新闻ID；否则去数据库获取新闻ID）
-		long total = 0L;
+		long total;
 		MinAndMaxId minMax = null;
 		if (categoryId == 0L) {
 			// 1. 获取新闻ID范围
@@ -151,7 +151,6 @@ public class NewsServiceImpl extends ServiceImpl<NewsMapper, News> implements Ne
 		);
 	}
 
-
 	// 从数据库中随机获取新闻（内部会自动维护用户已推荐的新闻ID集合）
 	private List<News> getRandomNews(String setKey, long categoryId, int size, MinAndMaxId minMax,
 									 Set<Long> excludeIds) {
@@ -161,7 +160,7 @@ public class NewsServiceImpl extends ServiceImpl<NewsMapper, News> implements Ne
 		// 如果指定分类下的新闻已经推荐完了，则直接返回空集合
 		if (categoryId != 0L && candidateIds.isEmpty()) return Collections.emptyList();
 
-		List<News> finalNews = null; // 最终返回的新闻
+		List<News> finalNews; // 最终返回的新闻
 
 		if (categoryId == 0L) {
 			// 转换为List并截取前size个
@@ -232,7 +231,7 @@ public class NewsServiceImpl extends ServiceImpl<NewsMapper, News> implements Ne
 	// 策略判断逻辑抽取
 	private boolean shouldUseForceMode(int excludeSize, int requestSize, long total) {
 		// 如果已经推荐过80%的新闻，则直接从数据库中随机获取新闻（无论是否被推荐过）
-		// 如果需要获取的数量大于数据库中剩余的数量的一半，则直接从数据库中
+		// 如果需要获取的数量大于数据库中剩余的数量的一半，则直接从数据库中随机获取新闻（无论是否被推荐过）
 		return ((double) (excludeSize + requestSize) / total) > 0.8
 				|| (total - excludeSize) <= (requestSize / 2);
 	}

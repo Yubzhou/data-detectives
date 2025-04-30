@@ -16,21 +16,25 @@ import org.springframework.format.support.FormattingConversionService;
 @Configuration
 public class ConversionConfig {
 
-    @Autowired
-    private SpelExpressionConverter spelExpressionConverter;
+	private final SpelExpressionConverter spelExpressionConverter;
 
-    @Bean
-    @ConfigurationPropertiesBinding // 标记该 ConversionService 专门用于处理 @ConfigurationProperties 的绑定过程。
-    public ConversionService conversionService() {
-        FormattingConversionService service = new FormattingConversionService();
-        ApplicationConversionService.configure(service); // 保留Spring Boot默认转换
+	@Autowired
+	public ConversionConfig(SpelExpressionConverter spelExpressionConverter) {
+		this.spelExpressionConverter = spelExpressionConverter;
+	}
+
+	@Bean
+	@ConfigurationPropertiesBinding // 标记该 ConversionService 专门用于处理 @ConfigurationProperties 的绑定过程。
+	public ConversionService conversionService() {
+		FormattingConversionService service = new FormattingConversionService();
+		ApplicationConversionService.configure(service); // 保留Spring Boot默认转换
 
 		// 注册自定义的 StringToLongTimeConverter
 		service.addConverter(new StringToLongTimeConverter());
 
-        // 注册自定义的 SpelExpressionConverter
-        service.addConverter(spelExpressionConverter);
+		// 注册自定义的 SpelExpressionConverter
+		service.addConverter(spelExpressionConverter);
 
-        return service;
-    }
+		return service;
+	}
 }

@@ -2,6 +2,7 @@ package com.yubzhou.controller;
 
 import com.yubzhou.annotation.JwtIgnore;
 import com.yubzhou.common.Result;
+import com.yubzhou.properties.FileUploadProperties;
 import com.yubzhou.service.FileUploadService;
 import com.yubzhou.service.FileUploadService.UploadResult;
 import jakarta.validation.constraints.Size;
@@ -22,10 +23,12 @@ import java.util.concurrent.CompletableFuture;
 public class FileUploadController {
 
 	private final FileUploadService fileUploadService;
+	private final FileUploadProperties fileUploadProperties;
 
 	@Autowired
-	public FileUploadController(FileUploadService fileUploadService) {
+	public FileUploadController(FileUploadService fileUploadService, FileUploadProperties fileUploadProperties) {
 		this.fileUploadService = fileUploadService;
+		this.fileUploadProperties = fileUploadProperties;
 	}
 
 	// 上传单张图片（异步）
@@ -36,7 +39,9 @@ public class FileUploadController {
 		long startTime = System.currentTimeMillis();
 		// 接受所有图片类型
 		Set<MediaType> allowedTypes = Set.of(new MediaType("image", "*"));
-		CompletableFuture<UploadResult> future = fileUploadService.uploadImage(files, allowedTypes);
+		// 获取图片上传临时目录（相对路径），防止用户更换头像时产生的未引用图片导致的存储浪费问题
+		String relativeUploadDir = fileUploadProperties.getImage().getTempDir();
+		CompletableFuture<UploadResult> future = fileUploadService.uploadImage(files, allowedTypes, relativeUploadDir);
 		long endTime = System.currentTimeMillis();
 		log.info("upload images cost {} ms", endTime - startTime);
 		return future.thenApply(Result::success); // 非阻塞返回
@@ -48,14 +53,16 @@ public class FileUploadController {
 		long startTime = System.currentTimeMillis();
 		// 接受所有图片类型
 		Set<MediaType> allowedTypes = Set.of(new MediaType("image", "*"));
-		CompletableFuture<UploadResult> future = fileUploadService.uploadImages(files, allowedTypes);
+		// 获取图片上传临时目录（相对路径），防止用户更换头像时产生的未引用图片导致的存储浪费问题
+		String relativeUploadDir = fileUploadProperties.getImage().getTempDir();
+		CompletableFuture<UploadResult> future = fileUploadService.uploadImages(files, allowedTypes, relativeUploadDir);
 		long endTime = System.currentTimeMillis();
 		log.info("upload images cost {} ms", endTime - startTime);
 		return future.thenApply(Result::success); // 非阻塞返回
 	}
 
 	// 上传JSON文件（同步）
-	@PostMapping("/json")
+	// @PostMapping("/json")
 	@JwtIgnore // 忽略JWT校验
 	public CompletableFuture<Result<?>> handleJsonUpload(@RequestParam("json")
 														 @Size(min = 1, max = 1, message = "仅支持单个文件上传")

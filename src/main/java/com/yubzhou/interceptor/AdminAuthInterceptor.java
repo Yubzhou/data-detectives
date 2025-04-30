@@ -6,6 +6,7 @@ import com.yubzhou.exception.BusinessException;
 import com.yubzhou.util.WebContextUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
@@ -16,7 +17,7 @@ public class AdminAuthInterceptor implements HandlerInterceptor {
 		// 获取当前用户令牌（如果不存在则自动抛出异常）
 		UserToken userToken = WebContextUtil.getUserToken();
 
-		// 检查管理员权限
+		// 检查管理员权限（拥有Admin或SuperAdmin权限）
 		if (!userToken.getRole().isAdmin()) {
 			throw new BusinessException(ReturnCode.ACCESS_DENIED);
 		}

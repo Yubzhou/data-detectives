@@ -31,9 +31,7 @@ class NewsCategoryRelationServiceTest {
 		long start = System.currentTimeMillis();
 		Map<Long, List<String>> newsCategoryRelationMap = newsCategoryRelationService.getNewsCategoryRelationMap(newsIds);
 		long end = System.currentTimeMillis();
-		newsCategoryRelationMap.forEach((newsId, categoryNames) -> {
-			System.out.println("newsId: " + newsId + ", categoryNames: " + categoryNames);
-		});
+		newsCategoryRelationMap.forEach((newsId, categoryNames) -> System.out.println("newsId: " + newsId + ", categoryNames: " + categoryNames));
 		log.info("getNewsCategoryRelationMap cost {} ms", end - start);
 	}
 }

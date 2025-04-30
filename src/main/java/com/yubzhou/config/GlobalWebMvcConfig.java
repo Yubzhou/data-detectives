@@ -10,7 +10,12 @@ import com.yubzhou.util.JwtUtil;
 import com.yubzhou.util.PathUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.CacheControl;
 import org.springframework.web.servlet.config.annotation.*;
+import org.springframework.web.servlet.resource.PathResourceResolver;
+import org.springframework.web.servlet.resource.VersionResourceResolver;
+
+import java.util.concurrent.TimeUnit;
 
 @Configuration
 @RequiredArgsConstructor
@@ -133,19 +138,35 @@ public class GlobalWebMvcConfig implements WebMvcConfigurer {
 		// registry.addResourceHandler("/static/**")
 		// 		.addResourceLocations("classpath:/static/");
 
-		// 默认静态资源需通过 / 访问
-		registry.addResourceHandler("/**")
-				.addResourceLocations("classpath:/static/");
+		CacheControl cacheControl = CacheControl.maxAge(365, TimeUnit.DAYS)
+				.cachePublic() // 表明响应可以被任何对象（包括：发送请求的客户端，代理服务器，等等）缓存
+				.immutable() // 表示响应正文不会随时间而改变。资源（如果未过期）在服务器上不发生改变，因此客户端不应发送重新验证请求头（例如If-None-Match或 If-Modified-Since）来检查更新，即使用户显式地刷新页面。
+				.mustRevalidate(); // 一旦资源过期（比如已经超过max-age），在成功向原始服务器验证之前，缓存不能用该资源响应后续请求。
 
-		// 上传图片存储路径
+		// 默认资源路径（与项目根路径同级）（外部目录，长期缓存）
+		String defaultPath = PathUtil.getExternalPath("./default").toString();
+		registry.addResourceHandler("/default/**")
+				.addResourceLocations("file:" + defaultPath + "/")
+				.setCacheControl(cacheControl); // 设置 HTTP 缓存控制头
+
+		// 上传图片存储路径（外部目录，短期缓存）
 		String imagePath = PathUtil.getExternalPath(fileUploadProperties.getImage().getUploadDir()).toString();
 		registry.addResourceHandler("/uploads/images/**")
 				.addResourceLocations("file:" + imagePath + "/")
-				.setCachePeriod(3600);
+				// 因为头像文件名使用唯一UUID，每次更新头像生成新UUID，旧资源不会变更。建议调整为长期缓存
+				// UUID 保证资源唯一性，适合不可变
+				.setCacheControl(cacheControl);
 
-		// 默认资源路径（与项目根路径同级）
-		String defaultPath = PathUtil.getExternalPath("./default").toString();
-		registry.addResourceHandler("/default/**")
-				.addResourceLocations("file:" + defaultPath + "/");
+		CacheControl staticCacheControl = CacheControl.maxAge(1, TimeUnit.HOURS) // 设置缓存存储的最大周期，超过这个时间缓存被认为过期 (单位秒)。
+				.cachePrivate() // 表明响应只能被单个用户缓存，不能作为共享缓存（即代理服务器不能缓存它）。私有缓存可以缓存响应内容，比如：对应用户的本地浏览器。
+				.mustRevalidate(); // 一旦资源过期（比如已经超过max-age），在成功向原始服务器验证之前，缓存不能用该资源响应后续请求。
+
+		// 默认静态资源需通过 / 访问（classpath:/static/，启用版本控制）
+		registry.addResourceHandler("/**")
+				.addResourceLocations("classpath:/static/")
+				.setCacheControl(staticCacheControl)
+				.resourceChain(true) // 启用资源链优化
+				.addResolver(new VersionResourceResolver().addContentVersionStrategy("/**")) // 启用版本控制（版本解析器优先）
+				.addResolver(new PathResourceResolver()); // 添加路径资源解析器（基础路径解析器兜底）
 	}
 }

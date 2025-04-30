@@ -46,7 +46,7 @@ public class NewsLoader {
 	public void insertNewsCategoryRelations() throws IOException {
 		InputStream is = getClass().getResourceAsStream("/data/news_category_relations.json");
 
-		List<Map<String, Object>> relations = mapper.readValue(is, new TypeReference<List<Map<String, Object>>>() {
+		List<Map<String, Object>> relations = mapper.readValue(is, new TypeReference<>() {
 		});
 
 		long newsId = 70;

@@ -5,7 +5,6 @@ import com.yubzhou.common.ReturnCode;
 import com.yubzhou.common.UserActionEvent;
 import com.yubzhou.exception.BusinessException;
 import com.yubzhou.properties.JwtTimeUnit;
-import com.yubzhou.service.NewsService;
 import com.yubzhou.util.ClientFingerprintUtil;
 import com.yubzhou.util.PathUtil;
 import org.junit.jupiter.api.Test;
