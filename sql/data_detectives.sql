@@ -57,6 +57,18 @@ CREATE TABLE IF NOT EXISTS `detection_records`
 
 SHOW CREATE TABLE `detection_records`;
 
+-- 查询用户的总检测次数、检测结果为真新闻的数量、今年检测总天数
+SELECT COUNT(*)                    AS `total_detections`,
+       SUM(`detection_result` = 1) AS `true_news_count`,
+       COUNT(DISTINCT CASE
+                          WHEN `created_at` >= MAKEDATE(YEAR(NOW()), 1)
+                              THEN DATE(`created_at`)
+           END)                    AS `total_detection_days`
+FROM `detection_records`
+WHERE `user_id` = 4;
+
+-- 获取当前年的第一天
+SELECT MAKEDATE(YEAR(NOW()), 1);
 
 # ALTER TABLE `detection_records`
 #     ADD COLUMN `detection_date` DATE AS (DATE(`created_at`)) VIRTUAL,
@@ -66,41 +78,67 @@ SHOW CREATE TABLE `detection_records`;
 #     DROP INDEX `idx_user_date`,
 #     ADD INDEX `idx_user_date_desc` (`user_id`, `detection_date` DESC);
 
-# -- 统计用户的总检测次数和最长连续检测天数（基于用户变量）
-# SELECT
-#     -- 直接统计总记录数（不去重）
-#     (SELECT COUNT(*) FROM `detection_records` WHERE `user_id` = 4) AS `total_detections`,
-#     -- 计算最长连续天数（需去重日期）
-#     IFNULL(MAX(`cont_days`), 0)                                    AS `max_continuous_days`
-# FROM (SELECT `grp`,
-#              COUNT(*) AS `cont_days`
-#       FROM (SELECT `detection_date`,
-#                    @`grp` := IF(
-#                            DATEDIFF(`detection_date`, @`prev_date`) = 1 AND @`prev_user` = `user_id`,
-#                            @`grp`,
-#                            @`grp` + 1
-#                              ) AS `grp`,
-#                    @`prev_date` := `detection_date`,
-#                    @`prev_user` := `user_id`
-#             FROM (SELECT DISTINCT `user_id`, `detection_date`
-#                   FROM `detection_records`
-#                   WHERE `user_id` = 4) AS `dedup_dates`, -- 先对日期去重
-#                  (SELECT @`prev_date` := NULL, @`prev_user` := NULL, @`grp` := 0) `vars`
-#             ORDER BY `user_id`, `detection_date`) AS `t`
-#       GROUP BY `grp`) AS `t2`;
-
-
--- 统计用户的总检测次数和最长连续检测天数（基于窗口函数）
-SELECT (SELECT COUNT(*) FROM `detection_records` WHERE `user_id` = 4) AS `total_detections`,
-       IFNULL(MAX(`cont_days`), 0)                                    AS `max_continuous_days`
+-- 统计用户的最长连续检测天数（基于窗口函数）
+SELECT IFNULL(MAX(`cont_days`), 0) AS `max_continuous_days`
 FROM (SELECT COUNT(*) AS `cont_days`
-      FROM (SELECT `user_id`,
-                   `detection_date`,
+      FROM (SELECT `detection_date`,
                    DATE_SUB(`detection_date`, INTERVAL ROW_NUMBER() OVER (ORDER BY `detection_date`) DAY) AS `grp`
-            FROM (SELECT DISTINCT `user_id`, `detection_date`
+            FROM (SELECT DISTINCT `detection_date`
                   FROM `detection_records`
                   WHERE `user_id` = 4) AS `dedup`) AS `t`
       GROUP BY `grp`) AS `t2`;
+
+
+-- 统计用户的历史最长连续检测天数、当前连续检测天数、最后一次检测日期（yyyy-MM-dd）
+WITH
+-- 获取用户所有唯一检测日期
+dedup AS (
+    SELECT DISTINCT detection_date
+    FROM detection_records
+    WHERE user_id = 4
+),
+-- 对日期进行分组，标记连续日期
+grouped AS (
+    SELECT
+        detection_date,
+        DATE_SUB(detection_date, INTERVAL ROW_NUMBER() OVER (ORDER BY detection_date) DAY) AS grp
+    FROM dedup
+),
+-- 统计每个连续分组的持续天数及起止日期
+group_summary AS (
+    SELECT
+        grp,
+        COUNT(*) AS cont_days,
+        MIN(detection_date) AS start_date,
+        MAX(detection_date) AS end_date
+    FROM grouped
+    GROUP BY grp
+),
+-- 计算最长连续天数
+max_continuous AS (
+    SELECT MAX(cont_days) AS max_continuous_days
+    FROM group_summary
+),
+-- 获取最近一次检测日期
+last_date AS (
+    SELECT MAX(detection_date) AS last_detection_date
+    FROM dedup
+),
+-- 获取当前连续天数（基于最近日期所在分组），直接排序取当前连续天数
+current_group AS (
+    SELECT cont_days AS current_continuous_days
+    FROM group_summary
+    ORDER BY end_date DESC
+    LIMIT 1
+)
+-- 组合最终结果
+SELECT
+    COALESCE(mc.max_continuous_days, 0) AS max_continuous_days, -- 当前没有最长连续天数时，返回0
+    ld.last_detection_date,
+    COALESCE(cg.current_continuous_days, 0) AS current_continuous_days -- 当前没有连续天数时，返回0
+FROM max_continuous mc
+         CROSS JOIN last_date ld
+         LEFT JOIN current_group cg ON TRUE;
 
 
 -- 新闻表（存储核心新闻数据）

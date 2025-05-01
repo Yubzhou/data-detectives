@@ -43,8 +43,7 @@ public class CommentDataGenerator {
 	@PostConstruct
 	private void init() {
 		MinAndMaxId minAndMaxId = userService.getMinAndMaxId();
-		// USER_ID_MIN = minAndMaxId.getMinId();
-		USER_ID_MIN = 96L;
+		USER_ID_MIN = 637L; // 必须设置，否则会出错
 		USER_ID_MAX = minAndMaxId.getMaxId();
 
 		log.info("User ID Range initialized: [{}-{}]", USER_ID_MIN, USER_ID_MAX);

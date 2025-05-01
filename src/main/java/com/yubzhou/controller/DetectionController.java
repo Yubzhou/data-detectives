@@ -36,7 +36,7 @@ public class DetectionController {
 		// 获取用户ID
 		long userId = WebContextUtil.getCurrentUserId();
 		// 校验通过后，调用服务层保存数据
-		boolean success = createDetectionRecords(userId, dtoList);
+		boolean success = detectionRecordService.processDetection(userId, dtoList);
 		if (!success) return Result.fail("创建检测记录失败");
 		return Result.successWithMessage("创建检测记录成功，数量: " + dtoList.size());
 	}
@@ -56,11 +56,5 @@ public class DetectionController {
 		);
 
 		return Result.success(records);
-	}
-
-	// 将saveBatch提到controller层，防止service本类自己调用导致事务失效
-	private boolean createDetectionRecords(final long userId, List<CreateDetectionRecordDto> dtoList) {
-		List<DetectionRecord> records = dtoList.stream().map(dto -> dto.toEntity(userId)).toList();
-		return detectionRecordService.saveBatch(records, detectionRecordService.DEFAULT_BATCH_SIZE);
 	}
 }

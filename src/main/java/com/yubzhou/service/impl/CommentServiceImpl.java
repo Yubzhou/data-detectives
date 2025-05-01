@@ -138,6 +138,19 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
 		log.info("已删除redis缓存中的新闻详情，删除数量：{}", deleted);
 	}
 
+	@Override
+	public Long getCommentCountByNewsId(Long newsId) {
+		return this.lambdaQuery()
+				.eq(Comment::getNewsId, newsId)
+				.count();
+	}
+
+	@Override
+	public Long getCommentCountByUserId(Long userId) {
+		return this.lambdaQuery()
+				.eq(Comment::getUserId, userId)
+				.count();
+	}
 
 	private IPage<CommentVo> listCommentsHandler(Long userId, Long newsId, QueryCommentDto queryDto) {
 		// 设置分页默认参数

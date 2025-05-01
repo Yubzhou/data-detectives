@@ -22,4 +22,8 @@ public interface CommentService extends IService<Comment> {
 	boolean likeComment(Long id, long userId);
 
 	void syncCommentCount();
+
+	Long getCommentCountByNewsId(Long newsId);
+
+	Long getCommentCountByUserId(Long userId);
 }

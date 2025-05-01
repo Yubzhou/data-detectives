@@ -8,6 +8,7 @@ import com.yubzhou.common.UserRole;
 import com.yubzhou.consumer.HotNewsService;
 import com.yubzhou.model.po.News;
 import com.yubzhou.model.po.User;
+import com.yubzhou.model.pojo.UserDetectionStats;
 import com.yubzhou.util.RedisUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
@@ -469,6 +470,36 @@ public class RedisTest {
 		Map hash = redisTemplate.opsForHash().entries("hash");
 		log.info("hash: {}; type: {}", hash, hash.getClass());
 		// log.info("hash: {}; type: {}", ((Map<?, ?>) hash).get(1), ((Map<?, ?>) hash).get(1).getClass());
+	}
+
+	@Test
+	public void test16() throws Exception {
+		String key = "not_exist_key";
+		String value = (String) redisTemplate.opsForValue().get(key);
+		System.out.println(value);
+		if (value != null) {
+			System.out.println(value.getClass());
+		}
+	}
+
+	@Test
+	public void test17() throws Exception {
+		String key = "user:detection:stats:1";
+
+		UserDetectionStats stats = UserDetectionStats.createDefault();
+		redisTemplate.opsForValue().set(key, stats);
+
+		Object value = redisUtil.get(key);
+		System.out.println(value);
+		if (value != null) {
+			System.out.println(value.getClass());
+		}
+
+		UserDetectionStats stats1 = redisUtil.get(key, UserDetectionStats.class);
+		System.out.println(stats1);
+		if (stats1 != null) {
+			System.out.println(stats1.getClass());
+		}
 	}
 
 

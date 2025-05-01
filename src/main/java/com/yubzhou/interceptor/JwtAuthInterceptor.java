@@ -8,10 +8,13 @@ import com.yubzhou.util.WebContextUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.aop.support.AopUtils;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import java.lang.reflect.Method;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * JWT鉴权拦截器
@@ -35,17 +38,16 @@ public class JwtAuthInterceptor implements HandlerInterceptor {
 				request.getServletPath());
 		// 强制放行所有 OPTIONS 请求
 		if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
-			// response.setHeader("Access-Control-Expose-Headers", TokenInvalidException.TOKEN_INVALID_HEADER);
 			response.setStatus(HttpServletResponse.SC_OK); // 明确返回 200
-			log.info("OPTIONS 请求已放行，路径：{}", request.getServletPath());
-			return true; // 中断后续处理
-		}
-		if (!(handler instanceof HandlerMethod)) {
-			// 输出请求方法和请求路径
+			// log.info("OPTIONS 请求已放行，路径：{}", request.getServletPath());
 			return true;
 		}
-		// 如果该方法上存在JwtIgnore注解且值为true（或者该类上存在JwtIgnore注解且值为true），则直接通过
-		if (isJwtIgnore((HandlerMethod) handler)) {
+		// 如果不是映射到方法（Controller），直接通过
+		if (!(handler instanceof HandlerMethod)) {
+			return true;
+		}
+		// 如果该方法需要跳过JWT校验，直接通过
+		if (shouldSkipJwtValidation((HandlerMethod) handler)) {
 			return true;
 		}
 		// 要检查的字符串，如果为null、长度为0或只包含空白字符则抛出自定义异常 BusinessException
@@ -65,27 +67,57 @@ public class JwtAuthInterceptor implements HandlerInterceptor {
 		WebContextUtil.removeContext();
 	}
 
+	// /**
+	//  * JWT校验忽略判断方法
+	//  */
+	// private boolean shouldSkipJwtValidation(HandlerMethod handlerMethod) {
+	// 	// 获取方法层注解（优先判断）
+	// 	Method method = handlerMethod.getMethod();
+	// 	JwtIgnore methodAnnotation = method.getAnnotation(JwtIgnore.class);
+	//
+	// 	// 方法层明确声明时立即返回
+	// 	if (methodAnnotation != null) {
+	// 		return methodAnnotation.value();
+	// 	}
+	//
+	// 	// 获取类层注解（次级判断）
+	// 	Class<?> clazz = handlerMethod.getBeanType();
+	// 	JwtIgnore classAnnotation = clazz.getAnnotation(JwtIgnore.class);
+	//
+	// 	return classAnnotation != null && classAnnotation.value();
+	// }
+
+	// 使用 ConcurrentHashMap 实现注解缓存
+	private final Map<Method, Boolean> methodCache = new ConcurrentHashMap<>(256);
+	private final Map<Class<?>, Boolean> classCache = new ConcurrentHashMap<>(256);
+
 	/**
-	 * 判断该方法是否存在JwtIgnore注解且值为true
-	 *
-	 * @param handlerMethod 方法
-	 * @return true：存在JwtIgnore注解且值为true，false：不存在或注解值为false
+	 * 判断是否需要跳过JWT校验（带缓存优化）
+	 * 方法上JwtIgnore注解的优先级高于类级
+	 * 方法级缓存：使用 ConcurrentHashMap 实现注解缓存，以优化方法级注解的判断
+	 * 类级缓存：使用 ConcurrentHashMap 实现注解缓存，以优化类级注解的判断
 	 */
-	private boolean isJwtIgnore(HandlerMethod handlerMethod) {
-		// 先判断该方法是否存在JwtIgnore注解
+	private boolean shouldSkipJwtValidation(HandlerMethod handlerMethod) {
+		// log.info("methodCache：{}", methodCache);
+		// log.info("classCache：{}", classCache);
+
 		Method method = handlerMethod.getMethod();
-		if (method.isAnnotationPresent(JwtIgnore.class)) {
-			JwtIgnore jwtIgnore = method.getAnnotation(JwtIgnore.class);
-			if (jwtIgnore.value()) {
-				return true;
+
+		// 优先检查方法级缓存
+		return methodCache.computeIfAbsent(method, m -> {
+			// 方法级注解判断
+			JwtIgnore methodAnnotation = m.getAnnotation(JwtIgnore.class);
+			if (methodAnnotation != null) {
+				return methodAnnotation.value();
 			}
-		}
-		// 如果该方法不存在JwtIgnore注解，则判断该类是否存在JwtIgnore注解
-		Class<?> clazz = handlerMethod.getBeanType();
-		if (clazz.isAnnotationPresent(JwtIgnore.class)) {
-			JwtIgnore jwtIgnore = clazz.getAnnotation(JwtIgnore.class);
-			return jwtIgnore.value();
-		}
-		return false;
+
+			// 未找到方法级注解时，检查类级缓存
+			// 使用 AopUtils.getTargetClass 将始终获取到 获取原始目标类，而不会返回代理类
+			Class<?> targetClass = AopUtils.getTargetClass(handlerMethod.getBean());
+			return classCache.computeIfAbsent(targetClass, clazz -> {
+				JwtIgnore classAnnotation = clazz.getAnnotation(JwtIgnore.class);
+				return classAnnotation != null && classAnnotation.value();
+			});
+		});
 	}
 }
