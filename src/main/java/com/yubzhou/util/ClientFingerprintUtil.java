@@ -1,10 +1,12 @@
 package com.yubzhou.util;
 
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+@Slf4j
 public class ClientFingerprintUtil {
 
 	// 定义一个字符数组，存储16进制字符
@@ -14,6 +16,8 @@ public class ClientFingerprintUtil {
 		String ip = getClientIp(request);
 		String userAgent = request.getHeader("User-Agent");
 		// String deviceId = request.getHeader("X-Device-ID");
+
+		log.info("ClientFingerprintUtil中：【ip: {}】,【userAgent: {}】", ip, userAgent);
 
 		String rawData = buildRawData(ip, userAgent);
 		return sha256(rawData);

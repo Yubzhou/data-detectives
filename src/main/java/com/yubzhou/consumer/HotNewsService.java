@@ -57,7 +57,7 @@ public class HotNewsService {
 	// 监听用户行为事件
 	@KafkaListener(topics = KafkaConstant.USER_ACTION_TOPIC, groupId = KafkaConstant.USER_ACTION_GROUP_ID)
 	public void processEvent(UserActionEvent event) {
-		log.info("Received user action event: {}", event);
+		// log.info("Received user action event: {}", event);
 		// 更新新闻指标和热度
 		asyncUpdateMetricsAndHotness(event);
 	}
@@ -146,7 +146,7 @@ public class HotNewsService {
 		userNewsAction.put(ActionType.OPPOSE.getField(), opposes);
 		userNewsAction.put(ActionType.FAVORITE.getField(), favorites);
 
-		log.info("User {} action: {}", userId, userNewsAction);
+		// log.info("User {} action: {}", userId, userNewsAction);
 
 		return userNewsAction;
 	}
